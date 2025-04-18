@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import AppShell from "@/components/layouts/AppShell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,8 +17,22 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { AddUserDialog } from "@/components/users/AddUserDialog";
+import { EditUserDialog } from "@/components/users/EditUserDialog";
+
+type User = {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  department: string;
+  status: string;
+  initials: string;
+};
 
 const UsersPage = () => {
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
   // Mock user data
   const users = [
     {
@@ -66,6 +81,11 @@ const UsersPage = () => {
       initials: "LB"
     },
   ];
+
+  const handleEditUser = (user: User) => {
+    setEditingUser(user);
+    setIsEditDialogOpen(true);
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -154,7 +174,9 @@ const UsersPage = () => {
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem>View profile</DropdownMenuItem>
-                            <DropdownMenuItem>Edit user</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditUser(user)}>
+                              Edit user
+                            </DropdownMenuItem>
                             <DropdownMenuItem>Reset password</DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-destructive">
@@ -171,6 +193,14 @@ const UsersPage = () => {
           </CardContent>
         </Card>
       </div>
+
+      {editingUser && (
+        <EditUserDialog 
+          user={editingUser} 
+          open={isEditDialogOpen} 
+          onOpenChange={setIsEditDialogOpen} 
+        />
+      )}
     </AppShell>
   );
 };
