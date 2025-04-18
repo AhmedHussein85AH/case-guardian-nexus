@@ -17,7 +17,6 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  createOrganization: (name: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,7 +28,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is stored in localStorage on component mount
     const checkAuth = () => {
       const storedUser = localStorage.getItem('caseGuardianUser');
       if (storedUser) {
@@ -96,32 +94,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const createOrganization = async (name: string) => {
-    if (!user) {
-      throw new Error("Authentication required");
-    }
-
-    try {
-      console.log("Creating organization:", name);
-      // Mock organization creation
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Update user with organization
-      const updatedUser = {
-        ...user,
-        organization: name
-      };
-      
-      localStorage.setItem("caseGuardianUser", JSON.stringify(updatedUser));
-      setUser(updatedUser);
-      
-      return Promise.resolve();
-    } catch (error) {
-      console.error("Organization creation error:", error);
-      return Promise.reject(error);
-    }
-  };
-
   const logout = () => {
     localStorage.removeItem('caseGuardianUser');
     setUser(null);
@@ -139,7 +111,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isLoading,
       login,
       logout,
-      createOrganization
     }}>
       {children}
     </AuthContext.Provider>
