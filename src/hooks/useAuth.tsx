@@ -90,6 +90,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: "Failed to log in. Please try again.",
         variant: "destructive",
       });
+      console.error("Login error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -97,15 +98,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const createOrganization = async (name: string) => {
     if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please log in to create an organization",
-        variant: "destructive",
-      });
-      return;
+      throw new Error("Authentication required");
     }
 
     try {
+      console.log("Creating organization:", name);
       // Mock organization creation
       await new Promise(resolve => setTimeout(resolve, 800));
       
@@ -118,16 +115,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem("caseGuardianUser", JSON.stringify(updatedUser));
       setUser(updatedUser);
       
-      toast({
-        title: "Organization created",
-        description: `${name} has been successfully created`,
-      });
+      return Promise.resolve();
     } catch (error) {
-      toast({
-        title: "Organization creation failed",
-        description: "Could not create organization. Please try again.",
-        variant: "destructive",
-      });
+      console.error("Organization creation error:", error);
+      return Promise.reject(error);
     }
   };
 

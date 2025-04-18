@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/form";
 import { useAuth } from "@/hooks/useAuth";
 import { Building } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   name: z.string().min(3, { message: "Organization name must be at least 3 characters." }),
@@ -33,7 +34,9 @@ type FormValues = z.infer<typeof formSchema>;
 
 export function CreateOrganizationDialog() {
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { createOrganization } = useAuth();
+  const { toast } = useToast();
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -43,9 +46,25 @@ export function CreateOrganizationDialog() {
   });
 
   const onSubmit = async (values: FormValues) => {
-    await createOrganization(values.name);
-    form.reset();
-    setOpen(false);
+    try {
+      setIsSubmitting(true);
+      await createOrganization(values.name);
+      toast({
+        title: "Success",
+        description: `Organization "${values.name}" created successfully`,
+      });
+      form.reset();
+      setOpen(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create organization. Please try again.",
+        variant: "destructive",
+      });
+      console.error("Organization creation error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -81,10 +100,12 @@ export function CreateOrganizationDialog() {
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isSubmitting}>
                 Cancel
               </Button>
-              <Button type="submit">Create Organization</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Creating..." : "Create Organization"}
+              </Button>
             </DialogFooter>
           </form>
         </Form>
