@@ -30,11 +30,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Eye, EyeOff } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   email: z.string().email({ message: "Please enter a valid email address." }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters." }),
   role: z.string().min(1, { message: "Please select a role." }),
   department: z.string().min(1, { message: "Please select a department." }),
 });
@@ -43,6 +44,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export function AddUserDialog() {
   const [open, setOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
   
   const form = useForm<FormValues>({
@@ -50,6 +52,7 @@ export function AddUserDialog() {
     defaultValues: {
       name: "",
       email: "",
+      password: "",
       role: "",
       department: "",
     },
@@ -59,13 +62,11 @@ export function AddUserDialog() {
     // Here you would typically send this data to your backend
     console.log("New user data:", values);
     
-    // For demo purposes, we'll just show a success toast
     toast({
       title: "User added successfully",
       description: `${values.name} has been added as a ${values.role}`,
     });
     
-    // Reset the form and close the dialog
     form.reset();
     setOpen(false);
   };
@@ -123,6 +124,41 @@ export function AddUserDialog() {
                     <FormLabel>Email</FormLabel>
                     <FormControl>
                       <Input placeholder="john.doe@example.com" type="email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input 
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Enter password"
+                          {...field}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-0 top-0"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                          <span className="sr-only">
+                            {showPassword ? "Hide password" : "Show password"}
+                          </span>
+                        </Button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
