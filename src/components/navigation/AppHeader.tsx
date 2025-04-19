@@ -13,12 +13,45 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const AppHeader = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   
   if (!user) return null;
+  
+  // Mock notifications data
+  const notifications = [
+    {
+      id: 1,
+      title: "New case assigned",
+      description: "Case #12345 has been assigned to you",
+      time: "5 minutes ago",
+    },
+    {
+      id: 2,
+      title: "High priority case updated",
+      description: "Case #12342 has been updated",
+      time: "1 hour ago",
+    },
+    {
+      id: 3,
+      title: "System update",
+      description: "New features have been added to the system",
+      time: "1 day ago",
+    }
+  ];
+  
+  const handleNotificationClick = (notificationId: number) => {
+    navigate(`/notifications?id=${notificationId}`);
+    toast({
+      title: "Opening notification",
+      description: "Navigating to notification details",
+    });
+  };
   
   return (
     <header className="border-b border-border h-16 px-4 flex items-center justify-between bg-background/95 backdrop-blur-sm sticky top-0 z-10">
@@ -37,7 +70,7 @@ const AppHeader = () => {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0">3</Badge>
+              <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0">{notifications.length}</Badge>
               <span className="sr-only">Notifications</span>
             </Button>
           </DropdownMenuTrigger>
@@ -45,27 +78,19 @@ const AppHeader = () => {
             <DropdownMenuLabel>Notifications</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <div className="max-h-96 overflow-auto">
-              <DropdownMenuItem className="cursor-pointer">
-                <div className="flex flex-col space-y-1">
-                  <p className="font-medium">New case assigned</p>
-                  <p className="text-sm text-muted-foreground">Case #12345 has been assigned to you</p>
-                  <p className="text-xs text-muted-foreground">5 minutes ago</p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">
-                <div className="flex flex-col space-y-1">
-                  <p className="font-medium">High priority case updated</p>
-                  <p className="text-sm text-muted-foreground">Case #12342 has been updated</p>
-                  <p className="text-xs text-muted-foreground">1 hour ago</p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">
-                <div className="flex flex-col space-y-1">
-                  <p className="font-medium">System update</p>
-                  <p className="text-sm text-muted-foreground">New features have been added to the system</p>
-                  <p className="text-xs text-muted-foreground">1 day ago</p>
-                </div>
-              </DropdownMenuItem>
+              {notifications.map((notification) => (
+                <DropdownMenuItem
+                  key={notification.id}
+                  className="cursor-pointer"
+                  onClick={() => handleNotificationClick(notification.id)}
+                >
+                  <div className="flex flex-col space-y-1">
+                    <p className="font-medium">{notification.title}</p>
+                    <p className="text-sm text-muted-foreground">{notification.description}</p>
+                    <p className="text-xs text-muted-foreground">{notification.time}</p>
+                  </div>
+                </DropdownMenuItem>
+              ))}
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>

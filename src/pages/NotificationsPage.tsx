@@ -1,4 +1,6 @@
 
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import AppShell from "@/components/layouts/AppShell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,8 +9,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Search, Filter } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 
 const NotificationsPage = () => {
+  const [searchParams] = useSearchParams();
+  const selectedId = searchParams.get("id") ? parseInt(searchParams.get("id")!) : null;
+  const [activeTab, setActiveTab] = useState("all");
+  const { toast } = useToast();
+  
   // Mock notifications data
   const notifications = [
     {
@@ -53,6 +61,35 @@ const NotificationsPage = () => {
     }
   ];
 
+  useEffect(() => {
+    if (selectedId) {
+      const notification = notifications.find(n => n.id === selectedId);
+      if (notification) {
+        // Switch to the appropriate tab based on notification type
+        setActiveTab(notification.type !== "report" ? notification.type : "all");
+        
+        toast({
+          title: "Notification selected",
+          description: `Viewing: ${notification.title}`,
+        });
+      }
+    }
+  }, [selectedId, toast]);
+
+  const markAllAsRead = () => {
+    toast({
+      title: "Success",
+      description: "All notifications marked as read",
+    });
+  };
+
+  const clearAll = () => {
+    toast({
+      title: "Success",
+      description: "All notifications cleared",
+    });
+  };
+
   return (
     <AppShell>
       <div className="space-y-6">
@@ -65,8 +102,8 @@ const NotificationsPage = () => {
           </div>
           
           <div className="flex gap-2 self-start">
-            <Button variant="outline">Mark all as read</Button>
-            <Button variant="outline" className="text-destructive hover:text-destructive">
+            <Button variant="outline" onClick={markAllAsRead}>Mark all as read</Button>
+            <Button variant="outline" className="text-destructive hover:text-destructive" onClick={clearAll}>
               Clear all
             </Button>
           </div>
@@ -98,7 +135,7 @@ const NotificationsPage = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="all" className="space-y-4">
+            <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
               <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-4 h-auto">
                 <TabsTrigger value="all" className="py-2">
                   All
@@ -126,7 +163,10 @@ const NotificationsPage = () => {
                     </TableHeader>
                     <TableBody>
                       {notifications.map((notification) => (
-                        <TableRow key={notification.id}>
+                        <TableRow 
+                          key={notification.id} 
+                          className={selectedId === notification.id ? "bg-blue-50 dark:bg-blue-900/20" : ""}
+                        >
                           <TableCell>
                             <div className="flex flex-col space-y-1">
                               <p className="font-medium">{notification.title}</p>
@@ -162,7 +202,10 @@ const NotificationsPage = () => {
                     </TableHeader>
                     <TableBody>
                       {notifications.filter(n => n.type === 'case').map((notification) => (
-                        <TableRow key={notification.id}>
+                        <TableRow 
+                          key={notification.id}
+                          className={selectedId === notification.id ? "bg-blue-50 dark:bg-blue-900/20" : ""}
+                        >
                           <TableCell>
                             <div className="flex flex-col space-y-1">
                               <p className="font-medium">{notification.title}</p>
@@ -198,7 +241,10 @@ const NotificationsPage = () => {
                     </TableHeader>
                     <TableBody>
                       {notifications.filter(n => n.type === 'message').map((notification) => (
-                        <TableRow key={notification.id}>
+                        <TableRow 
+                          key={notification.id}
+                          className={selectedId === notification.id ? "bg-blue-50 dark:bg-blue-900/20" : ""}
+                        >
                           <TableCell>
                             <div className="flex flex-col space-y-1">
                               <p className="font-medium">{notification.title}</p>
@@ -234,7 +280,10 @@ const NotificationsPage = () => {
                     </TableHeader>
                     <TableBody>
                       {notifications.filter(n => n.type === 'system').map((notification) => (
-                        <TableRow key={notification.id}>
+                        <TableRow 
+                          key={notification.id}
+                          className={selectedId === notification.id ? "bg-blue-50 dark:bg-blue-900/20" : ""}
+                        >
                           <TableCell>
                             <div className="flex flex-col space-y-1">
                               <p className="font-medium">{notification.title}</p>
