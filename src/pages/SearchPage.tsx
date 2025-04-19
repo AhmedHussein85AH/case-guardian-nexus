@@ -3,20 +3,34 @@ import AppShell from "@/components/layouts/AppShell";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CasesList from "@/components/cases/CasesList";
-import { getRecentCases } from "@/data/mockCases";
 import { Case } from "@/types/case";
+import { getAllCases } from "@/services/dataService";
 
 const SearchPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<Case[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
+  const [allCases, setAllCases] = useState<Case[]>([]);
+
+  useEffect(() => {
+    // Load all cases from local storage
+    setAllCases(getAllCases());
+    
+    // Listen for storage changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "case-guardian-cases") {
+        setAllCases(getAllCases());
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const handleSearch = () => {
-    // For now, we'll just filter the mock cases based on the search term
-    const allCases = getRecentCases(50); // Get more cases for search
-    
+    // Filter cases based on the search term
     const results = allCases.filter((caseItem) => {
       const term = searchTerm.toLowerCase();
       return (

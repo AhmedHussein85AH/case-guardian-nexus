@@ -1,312 +1,159 @@
 
+import AppShell from "@/components/layouts/AppShell";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Bell, CheckCheck, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import AppShell from "@/components/layouts/AppShell";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Search, Filter } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Notification, 
+  deleteNotification, 
+  getAllNotifications, 
+  markAllNotificationsAsRead, 
+  markNotificationAsRead 
+} from "@/services/dataService";
 import { useToast } from "@/hooks/use-toast";
 
 const NotificationsPage = () => {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [searchParams] = useSearchParams();
-  const selectedId = searchParams.get("id") ? parseInt(searchParams.get("id")!) : null;
-  const [activeTab, setActiveTab] = useState("all");
+  const highlightedId = searchParams.get('id') ? Number(searchParams.get('id')) : null;
   const { toast } = useToast();
   
-  // Mock notifications data
-  const notifications = [
-    {
-      id: 1,
-      title: "New case assigned",
-      description: "Case #12345 has been assigned to you",
-      time: "5 minutes ago",
-      isRead: false,
-      type: "case"
-    },
-    {
-      id: 2,
-      title: "High priority case updated",
-      description: "Case #12342 has been updated with new evidence",
-      time: "1 hour ago",
-      isRead: false,
-      type: "case"
-    },
-    {
-      id: 3,
-      title: "System update",
-      description: "New features have been added to the system",
-      time: "1 day ago",
-      isRead: true,
-      type: "system"
-    },
-    {
-      id: 4,
-      title: "New message from Sarah Williams",
-      description: "Have you reviewed the latest evidence for case #12342?",
-      time: "2 days ago",
-      isRead: true,
-      type: "message"
-    },
-    {
-      id: 5,
-      title: "Cases report ready",
-      description: "Monthly cases report is now available",
-      time: "3 days ago",
-      isRead: true,
-      type: "report"
-    }
-  ];
-
   useEffect(() => {
-    if (selectedId) {
-      const notification = notifications.find(n => n.id === selectedId);
-      if (notification) {
-        // Switch to the appropriate tab based on notification type
-        setActiveTab(notification.type !== "report" ? notification.type : "all");
-        
-        toast({
-          title: "Notification selected",
-          description: `Viewing: ${notification.title}`,
-        });
-      }
+    loadNotifications();
+    
+    // If there's a highlighted notification, mark it as read
+    if (highlightedId) {
+      markNotificationAsRead(highlightedId);
     }
-  }, [selectedId, toast]);
-
-  const markAllAsRead = () => {
+    
+    // Listen for storage changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "case-guardian-notifications") {
+        loadNotifications();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [highlightedId]);
+  
+  const loadNotifications = () => {
+    const allNotifications = getAllNotifications();
+    setNotifications(allNotifications);
+  };
+  
+  const handleMarkAllAsRead = () => {
+    markAllNotificationsAsRead();
+    loadNotifications();
     toast({
       title: "Success",
       description: "All notifications marked as read",
     });
   };
-
-  const clearAll = () => {
+  
+  const handleDeleteNotification = (id: number) => {
+    deleteNotification(id);
+    loadNotifications();
     toast({
-      title: "Success",
-      description: "All notifications cleared",
+      title: "Notification deleted",
+      description: "The notification has been removed",
     });
   };
-
+  
+  const handleMarkAsRead = (id: number) => {
+    markNotificationAsRead(id);
+    loadNotifications();
+    toast({
+      title: "Notification marked as read",
+      description: "The notification has been marked as read",
+    });
+  };
+  
   return (
     <AppShell>
       <div className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>
             <p className="text-muted-foreground mt-2">
-              View and manage your notifications
+              Stay updated with important events and updates
             </p>
           </div>
           
-          <div className="flex gap-2 self-start">
-            <Button variant="outline" onClick={markAllAsRead}>Mark all as read</Button>
-            <Button variant="outline" className="text-destructive hover:text-destructive" onClick={clearAll}>
-              Clear all
-            </Button>
-          </div>
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={handleMarkAllAsRead}
+            disabled={notifications.every(n => n.read)}
+          >
+            <CheckCheck className="h-4 w-4" />
+            Mark all as read
+          </Button>
         </div>
         
         <Card>
           <CardHeader>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
-              <div>
-                <CardTitle>All Notifications</CardTitle>
-                <CardDescription>
-                  You have {notifications.filter(n => !n.isRead).length} unread notifications
-                </CardDescription>
-              </div>
-              
-              <div className="flex gap-2">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="Search notifications..." 
-                    className="pl-8 w-[200px] md:w-[250px]"
-                  />
-                </div>
-                
-                <Button variant="outline" size="icon" className="h-10 w-10">
-                  <Filter className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+            <CardTitle>All Notifications</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-              <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-4 h-auto">
-                <TabsTrigger value="all" className="py-2">
-                  All
-                </TabsTrigger>
-                <TabsTrigger value="case" className="py-2">
-                  Cases
-                </TabsTrigger>
-                <TabsTrigger value="message" className="py-2">
-                  Messages
-                </TabsTrigger>
-                <TabsTrigger value="system" className="py-2">
-                  System
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="all" className="space-y-4">
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Notification</TableHead>
-                        <TableHead className="w-[150px]">Time</TableHead>
-                        <TableHead className="w-[100px]">Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {notifications.map((notification) => (
-                        <TableRow 
-                          key={notification.id} 
-                          className={selectedId === notification.id ? "bg-blue-50 dark:bg-blue-900/20" : ""}
+            {notifications.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Bell className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium">No notifications</h3>
+                <p className="text-muted-foreground mt-1">
+                  You don't have any notifications at the moment
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {notifications.map((notification) => (
+                  <div 
+                    key={notification.id} 
+                    className={`
+                      p-4 border rounded-lg
+                      ${notification.read ? 'bg-card' : 'bg-muted/30'}
+                      ${highlightedId === notification.id ? 'ring-2 ring-primary' : ''}
+                      transition-all
+                    `}
+                    id={`notification-${notification.id}`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-medium">{notification.title}</h3>
+                        <p className="text-muted-foreground text-sm mt-1">
+                          {notification.description}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {notification.time}
+                        </p>
+                      </div>
+                      <div className="flex space-x-2">
+                        {!notification.read && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleMarkAsRead(notification.id)}
+                            title="Mark as read"
+                          >
+                            <CheckCheck className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleDeleteNotification(notification.id)}
+                          title="Delete notification"
                         >
-                          <TableCell>
-                            <div className="flex flex-col space-y-1">
-                              <p className="font-medium">{notification.title}</p>
-                              <p className="text-sm text-muted-foreground">{notification.description}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {notification.time}
-                          </TableCell>
-                          <TableCell>
-                            {notification.isRead ? (
-                              <Badge variant="outline" className="bg-gray-100 text-gray-500 border-gray-200">Read</Badge>
-                            ) : (
-                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Unread</Badge>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="case" className="space-y-4">
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Notification</TableHead>
-                        <TableHead className="w-[150px]">Time</TableHead>
-                        <TableHead className="w-[100px]">Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {notifications.filter(n => n.type === 'case').map((notification) => (
-                        <TableRow 
-                          key={notification.id}
-                          className={selectedId === notification.id ? "bg-blue-50 dark:bg-blue-900/20" : ""}
-                        >
-                          <TableCell>
-                            <div className="flex flex-col space-y-1">
-                              <p className="font-medium">{notification.title}</p>
-                              <p className="text-sm text-muted-foreground">{notification.description}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {notification.time}
-                          </TableCell>
-                          <TableCell>
-                            {notification.isRead ? (
-                              <Badge variant="outline" className="bg-gray-100 text-gray-500 border-gray-200">Read</Badge>
-                            ) : (
-                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Unread</Badge>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="message" className="space-y-4">
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Notification</TableHead>
-                        <TableHead className="w-[150px]">Time</TableHead>
-                        <TableHead className="w-[100px]">Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {notifications.filter(n => n.type === 'message').map((notification) => (
-                        <TableRow 
-                          key={notification.id}
-                          className={selectedId === notification.id ? "bg-blue-50 dark:bg-blue-900/20" : ""}
-                        >
-                          <TableCell>
-                            <div className="flex flex-col space-y-1">
-                              <p className="font-medium">{notification.title}</p>
-                              <p className="text-sm text-muted-foreground">{notification.description}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {notification.time}
-                          </TableCell>
-                          <TableCell>
-                            {notification.isRead ? (
-                              <Badge variant="outline" className="bg-gray-100 text-gray-500 border-gray-200">Read</Badge>
-                            ) : (
-                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Unread</Badge>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="system" className="space-y-4">
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Notification</TableHead>
-                        <TableHead className="w-[150px]">Time</TableHead>
-                        <TableHead className="w-[100px]">Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {notifications.filter(n => n.type === 'system').map((notification) => (
-                        <TableRow 
-                          key={notification.id}
-                          className={selectedId === notification.id ? "bg-blue-50 dark:bg-blue-900/20" : ""}
-                        >
-                          <TableCell>
-                            <div className="flex flex-col space-y-1">
-                              <p className="font-medium">{notification.title}</p>
-                              <p className="text-sm text-muted-foreground">{notification.description}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {notification.time}
-                          </TableCell>
-                          <TableCell>
-                            {notification.isRead ? (
-                              <Badge variant="outline" className="bg-gray-100 text-gray-500 border-gray-200">Read</Badge>
-                            ) : (
-                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Unread</Badge>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </TabsContent>
-            </Tabs>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

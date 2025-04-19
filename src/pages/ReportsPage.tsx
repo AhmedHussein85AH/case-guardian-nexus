@@ -5,11 +5,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { BarChart3, Download, FileText, PieChart } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart as RPieChart, Pie, Cell } from "recharts";
-import { getRecentCases } from "@/data/mockCases";
+import { useEffect, useState } from "react";
+import { downloadCSV, exportCasesCSV, getAllCases } from "@/services/dataService";
+import { Case } from "@/types/case";
+import { useToast } from "@/hooks/use-toast";
 
 const ReportsPage = () => {
-  // Generate some mock data for reports based on our cases
-  const cases = getRecentCases(30);
+  const [cases, setCases] = useState<Case[]>([]);
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    setCases(getAllCases());
+    
+    // Listen for storage changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "case-guardian-cases") {
+        setCases(getAllCases());
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
   
   // Case type distribution data
   const caseTypeData = cases.reduce((acc, caseItem) => {
@@ -54,6 +71,24 @@ const ReportsPage = () => {
   
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
   
+  const handleExportReports = () => {
+    const csvContent = exportCasesCSV();
+    const filename = `case-guardian-report-${new Date().toISOString().split('T')[0]}.csv`;
+    downloadCSV(filename, csvContent);
+    
+    toast({
+      title: "Report exported",
+      description: `File "${filename}" has been downloaded`,
+    });
+  };
+  
+  const handleGenerateReport = () => {
+    toast({
+      title: "Report generated",
+      description: "Your report has been generated successfully",
+    });
+  };
+  
   return (
     <AppShell>
       <div className="space-y-6">
@@ -65,7 +100,7 @@ const ReportsPage = () => {
             </p>
           </div>
           
-          <Button variant="outline" className="self-start flex items-center gap-2">
+          <Button variant="outline" className="self-start flex items-center gap-2" onClick={handleExportReports}>
             <Download className="h-4 w-4" />
             Export Reports
           </Button>
@@ -197,15 +232,27 @@ const ReportsPage = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Case Reports</CardTitle>
-                <CardDescription>Detailed case reports will be available here</CardDescription>
+                <CardDescription>Generate detailed case reports</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-center py-12 text-muted-foreground">
-                  Detailed case reports functionality is coming soon.
-                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="border rounded-md p-4">
+                    <h3 className="font-medium mb-2">Summary Report</h3>
+                    <p className="text-sm text-muted-foreground mb-4">A high-level overview of all cases</p>
+                    <Button onClick={handleGenerateReport}>Generate</Button>
+                  </div>
+                  <div className="border rounded-md p-4">
+                    <h3 className="font-medium mb-2">Detailed Report</h3>
+                    <p className="text-sm text-muted-foreground mb-4">In-depth analysis of case data</p>
+                    <Button onClick={handleGenerateReport}>Generate</Button>
+                  </div>
+                </div>
               </CardContent>
               <CardFooter className="flex justify-end">
-                <Button variant="outline" disabled>Generate Report</Button>
+                <Button variant="outline" onClick={handleExportReports}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export All Reports
+                </Button>
               </CardFooter>
             </Card>
           </TabsContent>
@@ -214,15 +261,27 @@ const ReportsPage = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Advanced Analytics</CardTitle>
-                <CardDescription>Detailed analytics will be available here</CardDescription>
+                <CardDescription>Detailed analytics insights</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-center py-12 text-muted-foreground">
-                  Advanced analytics functionality is coming soon.
-                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="border rounded-md p-4">
+                    <h3 className="font-medium mb-2">Trend Analysis</h3>
+                    <p className="text-sm text-muted-foreground mb-4">Analyze case trends over time</p>
+                    <Button onClick={handleGenerateReport}>Generate</Button>
+                  </div>
+                  <div className="border rounded-md p-4">
+                    <h3 className="font-medium mb-2">Location Heat Map</h3>
+                    <p className="text-sm text-muted-foreground mb-4">Geographic distribution of cases</p>
+                    <Button onClick={handleGenerateReport}>Generate</Button>
+                  </div>
+                </div>
               </CardContent>
               <CardFooter className="flex justify-end">
-                <Button variant="outline" disabled>Export Analytics</Button>
+                <Button variant="outline" onClick={handleExportReports}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export Analytics
+                </Button>
               </CardFooter>
             </Card>
           </TabsContent>

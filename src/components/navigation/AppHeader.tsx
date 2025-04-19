@@ -15,38 +15,42 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect, useState } from "react";
+import { Notification, getAllNotifications, getUnreadNotificationsCount, markNotificationAsRead } from "@/services/dataService";
 
 const AppHeader = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  
+  useEffect(() => {
+    const loadNotifications = () => {
+      const allNotifications = getAllNotifications();
+      setNotifications(allNotifications);
+      setUnreadCount(getUnreadNotificationsCount());
+    };
+    
+    loadNotifications();
+    
+    // Listen for storage changes from other tabs/windows
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "case-guardian-notifications") {
+        loadNotifications();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
   
   if (!user) return null;
   
-  // Mock notifications data
-  const notifications = [
-    {
-      id: 1,
-      title: "New case assigned",
-      description: "Case #12345 has been assigned to you",
-      time: "5 minutes ago",
-    },
-    {
-      id: 2,
-      title: "High priority case updated",
-      description: "Case #12342 has been updated",
-      time: "1 hour ago",
-    },
-    {
-      id: 3,
-      title: "System update",
-      description: "New features have been added to the system",
-      time: "1 day ago",
-    }
-  ];
-  
   const handleNotificationClick = (notificationId: number) => {
+    markNotificationAsRead(notificationId);
     navigate(`/notifications?id=${notificationId}`);
+    setUnreadCount(getUnreadNotificationsCount());
     toast({
       title: "Opening notification",
       description: "Navigating to notification details",
@@ -70,7 +74,9 @@ const AppHeader = () => {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0">{notifications.length}</Badge>
+              {unreadCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0">{unreadCount}</Badge>
+              )}
               <span className="sr-only">Notifications</span>
             </Button>
           </DropdownMenuTrigger>
@@ -78,19 +84,25 @@ const AppHeader = () => {
             <DropdownMenuLabel>Notifications</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <div className="max-h-96 overflow-auto">
-              {notifications.map((notification) => (
-                <DropdownMenuItem
-                  key={notification.id}
-                  className="cursor-pointer"
-                  onClick={() => handleNotificationClick(notification.id)}
-                >
-                  <div className="flex flex-col space-y-1">
-                    <p className="font-medium">{notification.title}</p>
-                    <p className="text-sm text-muted-foreground">{notification.description}</p>
-                    <p className="text-xs text-muted-foreground">{notification.time}</p>
-                  </div>
-                </DropdownMenuItem>
-              ))}
+              {notifications.length === 0 ? (
+                <div className="p-4 text-center text-muted-foreground">
+                  No notifications
+                </div>
+              ) : (
+                notifications.map((notification) => (
+                  <DropdownMenuItem
+                    key={notification.id}
+                    className={`cursor-pointer ${!notification.read ? 'bg-muted/50 font-medium' : ''}`}
+                    onClick={() => handleNotificationClick(notification.id)}
+                  >
+                    <div className="flex flex-col space-y-1">
+                      <p className="font-medium">{notification.title}</p>
+                      <p className="text-sm text-muted-foreground">{notification.description}</p>
+                      <p className="text-xs text-muted-foreground">{notification.time}</p>
+                    </div>
+                  </DropdownMenuItem>
+                ))
+              )}
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>

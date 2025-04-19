@@ -11,7 +11,8 @@ import { caseTypes, priorities, statuses } from "@/data/mockCases";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Case, CasePriority, CaseStatus, CaseType } from "@/types/case";
+import { CasePriority, CaseStatus, CaseType } from "@/types/case";
+import { createCase } from "@/services/dataService";
 
 const CaseForm = () => {
   const [formData, setFormData] = useState({
@@ -53,18 +54,19 @@ const CaseForm = () => {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Generate a new case ID
-      const caseId = `CG-${Math.floor(10000 + Math.random() * 90000)}`;
-      
-      // In a real app, we would send this to an API
-      console.log("Submitting case:", { ...formData, caseId });
+      // Create new case and save to local storage
+      const newCase = createCase({
+        ...formData,
+        createdAt: new Date().toISOString(),
+        assignedTo: "Unassigned",
+        evidence: [],
+        witnesses: [],
+        updates: []
+      });
       
       toast({
         title: "Case created successfully",
-        description: `Case ID: ${caseId}`,
+        description: `Case ID: ${newCase.caseId}`,
       });
       
       navigate("/cases");
@@ -74,6 +76,7 @@ const CaseForm = () => {
         description: "An error occurred while creating the case. Please try again.",
         variant: "destructive",
       });
+      console.error("Case creation error:", error);
     } finally {
       setIsSubmitting(false);
     }
