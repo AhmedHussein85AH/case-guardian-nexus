@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -64,20 +63,22 @@ const CasesList = ({
   // Use provided cases or fallback to recent cases
   const allCases = cases || getRecentCases(20);
 
-  // Apply filters and search
-  const filteredCases = allCases.filter(caseItem => {
-    const matchesSearch = 
-      searchTerm === "" ||
-      caseItem.caseId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      caseItem.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      caseItem.location.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesType = filterType === "" || caseItem.caseType === filterType;
-    const matchesPriority = filterPriority === "" || caseItem.priority === filterPriority;
-    const matchesStatus = filterStatus === "" || caseItem.status === filterStatus;
-    
-    return matchesSearch && matchesType && matchesPriority && matchesStatus;
-  });
+  // Apply filters and search, then sort by creation date
+  const filteredCases = allCases
+    .filter(caseItem => {
+      const matchesSearch = 
+        searchTerm === "" ||
+        caseItem.caseId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        caseItem.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        caseItem.location.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesType = filterType === "" || caseItem.caseType === filterType;
+      const matchesPriority = filterPriority === "" || caseItem.priority === filterPriority;
+      const matchesStatus = filterStatus === "" || caseItem.status === filterStatus;
+      
+      return matchesSearch && matchesType && matchesPriority && matchesStatus;
+    })
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
