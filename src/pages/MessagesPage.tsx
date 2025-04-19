@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import AppShell from "@/components/layouts/AppShell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,8 +9,10 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 
 const MessagesPage = () => {
+  const { toast } = useToast();
   // Mock message data
   const conversations = [
     {
@@ -54,6 +57,45 @@ const MessagesPage = () => {
     },
   ];
 
+  // State to manage the active conversation
+  const [activeConversation, setActiveConversation] = useState(conversations[0]);
+  const [newMessage, setNewMessage] = useState("");
+  const [showingArchived, setShowingArchived] = useState(false);
+  
+  // Function to handle conversation selection
+  const handleConversationSelect = (conversation) => {
+    // Mark as read when clicked
+    const updatedConversation = { ...conversation, unread: false };
+    setActiveConversation(updatedConversation);
+    
+    // Show toast notification
+    toast({
+      title: "Conversation opened",
+      description: `Opened conversation with ${conversation.user}`,
+    });
+  };
+
+  // Function to handle sending a new message
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+    
+    toast({
+      title: "Message sent",
+      description: "Your message has been sent successfully",
+    });
+    
+    setNewMessage("");
+  };
+
+  // Function to handle creating a new message
+  const handleNewMessage = () => {
+    toast({
+      title: "New message",
+      description: "Starting a new conversation",
+    });
+  };
+
   return (
     <AppShell>
       <div className="space-y-6">
@@ -65,7 +107,10 @@ const MessagesPage = () => {
             </p>
           </div>
           
-          <Button className="self-start flex items-center gap-2">
+          <Button 
+            className="self-start flex items-center gap-2"
+            onClick={handleNewMessage}  
+          >
             <Plus className="h-4 w-4" />
             New Message
           </Button>
@@ -82,7 +127,10 @@ const MessagesPage = () => {
               <Input placeholder="Search messages..." className="mt-2" />
             </CardHeader>
             <CardContent className="p-0">
-              <Tabs defaultValue="inbox">
+              <Tabs 
+                defaultValue="inbox" 
+                onValueChange={(value) => setShowingArchived(value === "archived")}
+              >
                 <TabsList className="grid grid-cols-2 w-full rounded-none border-b border-t">
                   <TabsTrigger value="inbox" className="flex items-center gap-2">
                     <Inbox className="h-4 w-4" />
@@ -100,7 +148,8 @@ const MessagesPage = () => {
                         key={conversation.id} 
                         className={`p-4 border-b hover:bg-muted/50 cursor-pointer ${
                           conversation.unread ? 'bg-muted/30' : ''
-                        }`}
+                        } ${activeConversation.id === conversation.id ? 'bg-muted' : ''}`}
+                        onClick={() => handleConversationSelect(conversation)}
                       >
                         <div className="flex items-start gap-3">
                           <Avatar className="h-10 w-10">
@@ -145,10 +194,10 @@ const MessagesPage = () => {
             <CardHeader className="border-b p-4">
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
-                  <AvatarFallback>JS</AvatarFallback>
+                  <AvatarFallback>{activeConversation.userInitials}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <CardTitle className="text-lg">Jane Smith</CardTitle>
+                  <CardTitle className="text-lg">{activeConversation.user}</CardTitle>
                   <CardDescription>Last active 5 minutes ago</CardDescription>
                 </div>
               </div>
@@ -158,43 +207,38 @@ const MessagesPage = () => {
                 <div className="space-y-4">
                   <div className="flex gap-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarFallback>JS</AvatarFallback>
+                      <AvatarFallback>{activeConversation.userInitials}</AvatarFallback>
                     </Avatar>
                     <div className="bg-muted p-3 rounded-lg max-w-[80%]">
-                      <p className="text-sm">Hi, can you update me on case #45671? I need to prepare for the meeting tomorrow.</p>
-                      <p className="text-xs text-muted-foreground mt-1">10:23 AM</p>
+                      <p className="text-sm">{activeConversation.lastMessage}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{activeConversation.time}</p>
                     </div>
                   </div>
                   
                   <div className="flex gap-3 justify-end">
                     <div className="bg-primary text-primary-foreground p-3 rounded-lg max-w-[80%]">
-                      <p className="text-sm">Hello Jane, I'm working on the report now. I'll send it over in the next hour.</p>
-                      <p className="text-xs text-primary-foreground/80 mt-1">10:27 AM</p>
+                      <p className="text-sm">Hello {activeConversation.user.split(' ')[0]}, I'm working on the report now. I'll send it over in the next hour.</p>
+                      <p className="text-xs text-primary-foreground/80 mt-1">Just now</p>
                     </div>
                     <Avatar className="h-10 w-10">
                       <AvatarFallback>ME</AvatarFallback>
                     </Avatar>
                   </div>
-                  
-                  <div className="flex gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback>JS</AvatarFallback>
-                    </Avatar>
-                    <div className="bg-muted p-3 rounded-lg max-w-[80%]">
-                      <p className="text-sm">Perfect, thank you! Also, did you receive the new documents from the client?</p>
-                      <p className="text-xs text-muted-foreground mt-1">10:30 AM</p>
-                    </div>
-                  </div>
                 </div>
               </ScrollArea>
               
               <div className="p-4 border-t mt-auto">
-                <div className="flex gap-2">
-                  <Input placeholder="Type your message..." className="flex-1" />
-                  <Button size="icon">
+                <form onSubmit={handleSendMessage} className="flex gap-2">
+                  <Input 
+                    placeholder="Type your message..." 
+                    className="flex-1"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                  />
+                  <Button type="submit" size="icon">
                     <Send className="h-4 w-4" />
                   </Button>
-                </div>
+                </form>
               </div>
             </CardContent>
           </Card>
