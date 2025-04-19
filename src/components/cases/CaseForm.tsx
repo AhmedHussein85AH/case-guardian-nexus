@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -54,14 +53,10 @@ const CaseForm = () => {
     setIsSubmitting(true);
 
     try {
-      // Create new case and save to local storage
+      // Create new case and save to local storage - removing the assignedTo property
       const newCase = createCase({
         ...formData,
         createdAt: new Date().toISOString(),
-        assignedTo: "Unassigned",
-        evidence: [],
-        witnesses: [],
-        updates: []
       });
       
       toast({
