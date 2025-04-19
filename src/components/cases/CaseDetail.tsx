@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Case, CasePriority, CaseStatus } from "@/types/case";
-import { getCaseById } from "@/data/mockCases";
+import { getCaseById } from "@/services/dataService";
 import { ArrowLeft, Calendar, Clock, Edit, MessageSquare, MapPin, User, Users, FileText, Tag, Car, Package, CheckCircle2, AlertCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -27,7 +26,7 @@ const CaseDetail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Get case from mock data
+  // Get case from dataService instead of mock data
   const caseData = id ? getCaseById(id) : null;
   
   const [status, setStatus] = useState<CaseStatus>(caseData?.status || 'new');
