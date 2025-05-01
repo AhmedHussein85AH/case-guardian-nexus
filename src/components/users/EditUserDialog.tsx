@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, UserCog } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -87,13 +87,42 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
   }, [user, form]);
 
   const onSubmit = (values: FormValues) => {
-    // Here you would typically send this data to your backend
-    console.log("Updated user data:", { id: user.id, ...values });
+    // Get existing users from localStorage
+    const existingUsers = JSON.parse(localStorage.getItem('case-guardian-users') || '[]');
     
-    toast({
-      title: "User updated successfully",
-      description: `${values.name}'s information has been updated`,
-    });
+    // Find the user to update
+    const userIndex = existingUsers.findIndex((u: User) => u.id === user.id);
+    
+    if (userIndex !== -1) {
+      // Generate initials from updated name
+      const initials = values.name
+        .split(' ')
+        .map(part => part[0])
+        .join('')
+        .toUpperCase();
+        
+      // Update the user
+      existingUsers[userIndex] = {
+        ...existingUsers[userIndex],
+        name: values.name,
+        email: values.email,
+        role: values.role,
+        department: values.department,
+        status: values.status,
+        initials: initials,
+      };
+      
+      // Save back to localStorage
+      localStorage.setItem('case-guardian-users', JSON.stringify(existingUsers));
+      
+      toast({
+        title: "User updated successfully",
+        description: `${values.name}'s information has been updated`,
+      });
+      
+      // Trigger storage event to update UI
+      window.dispatchEvent(new Event('storage'));
+    }
     
     form.reset();
     onOpenChange(false);

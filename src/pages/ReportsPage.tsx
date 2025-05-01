@@ -1,4 +1,3 @@
-
 import AppShell from "@/components/layouts/AppShell";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 const ReportsPage = () => {
   const [cases, setCases] = useState<Case[]>([]);
   const { toast } = useToast();
+  const [generatingReport, setGeneratingReport] = useState<string | null>(null);
   
   useEffect(() => {
     setCases(getAllCases());
@@ -82,11 +82,17 @@ const ReportsPage = () => {
     });
   };
   
-  const handleGenerateReport = () => {
-    toast({
-      title: "Report generated",
-      description: "Your report has been generated successfully",
-    });
+  const handleGenerateReport = (reportType: string) => {
+    setGeneratingReport(reportType);
+    
+    // Simulate report generation with a delay
+    setTimeout(() => {
+      setGeneratingReport(null);
+      toast({
+        title: `${reportType} generated`,
+        description: `Your ${reportType.toLowerCase()} has been generated successfully`,
+      });
+    }, 1500);
   };
   
   return (
@@ -239,12 +245,22 @@ const ReportsPage = () => {
                   <div className="border rounded-md p-4">
                     <h3 className="font-medium mb-2">Summary Report</h3>
                     <p className="text-sm text-muted-foreground mb-4">A high-level overview of all cases</p>
-                    <Button onClick={handleGenerateReport}>Generate</Button>
+                    <Button 
+                      onClick={() => handleGenerateReport('Summary Report')}
+                      disabled={generatingReport === 'Summary Report'}
+                    >
+                      {generatingReport === 'Summary Report' ? 'Generating...' : 'Generate'}
+                    </Button>
                   </div>
                   <div className="border rounded-md p-4">
                     <h3 className="font-medium mb-2">Detailed Report</h3>
                     <p className="text-sm text-muted-foreground mb-4">In-depth analysis of case data</p>
-                    <Button onClick={handleGenerateReport}>Generate</Button>
+                    <Button 
+                      onClick={() => handleGenerateReport('Detailed Report')}
+                      disabled={generatingReport === 'Detailed Report'}
+                    >
+                      {generatingReport === 'Detailed Report' ? 'Generating...' : 'Generate'}
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -268,12 +284,22 @@ const ReportsPage = () => {
                   <div className="border rounded-md p-4">
                     <h3 className="font-medium mb-2">Trend Analysis</h3>
                     <p className="text-sm text-muted-foreground mb-4">Analyze case trends over time</p>
-                    <Button onClick={handleGenerateReport}>Generate</Button>
+                    <Button 
+                      onClick={() => handleGenerateReport('Trend Analysis')}
+                      disabled={generatingReport === 'Trend Analysis'}
+                    >
+                      {generatingReport === 'Trend Analysis' ? 'Generating...' : 'Generate'}
+                    </Button>
                   </div>
                   <div className="border rounded-md p-4">
                     <h3 className="font-medium mb-2">Location Heat Map</h3>
                     <p className="text-sm text-muted-foreground mb-4">Geographic distribution of cases</p>
-                    <Button onClick={handleGenerateReport}>Generate</Button>
+                    <Button 
+                      onClick={() => handleGenerateReport('Location Heat Map')}
+                      disabled={generatingReport === 'Location Heat Map'}
+                    >
+                      {generatingReport === 'Location Heat Map' ? 'Generating...' : 'Generate'}
+                    </Button>
                   </div>
                 </div>
               </CardContent>

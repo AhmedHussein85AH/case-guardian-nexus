@@ -59,8 +59,31 @@ export function AddUserDialog() {
   });
 
   const onSubmit = (values: FormValues) => {
-    // Here you would typically send this data to your backend
-    console.log("New user data:", values);
+    // Generate new user data with an ID and initials
+    const initials = values.name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase();
+      
+    const newUser = {
+      id: Date.now(),
+      name: values.name,
+      email: values.email,
+      role: values.role,
+      department: values.department,
+      status: "Active",
+      initials: initials,
+    };
+    
+    // Get existing users from localStorage or create empty array
+    const existingUsers = JSON.parse(localStorage.getItem('case-guardian-users') || '[]');
+    
+    // Add new user
+    existingUsers.push(newUser);
+    
+    // Save back to localStorage
+    localStorage.setItem('case-guardian-users', JSON.stringify(existingUsers));
     
     toast({
       title: "User added successfully",
@@ -69,6 +92,9 @@ export function AddUserDialog() {
     
     form.reset();
     setOpen(false);
+    
+    // Trigger storage event to update UI
+    window.dispatchEvent(new Event('storage'));
   };
 
   const roleOptions = [
