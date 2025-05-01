@@ -8,11 +8,25 @@ import { useEffect, useState } from "react";
 import { downloadCSV, exportCasesCSV, getAllCases } from "@/services/dataService";
 import { Case } from "@/types/case";
 import { useToast } from "@/hooks/use-toast";
+import { 
+  Table, 
+  TableHeader, 
+  TableRow, 
+  TableHead, 
+  TableBody, 
+  TableCell 
+} from "@/components/ui/table";
 
 const ReportsPage = () => {
   const [cases, setCases] = useState<Case[]>([]);
   const { toast } = useToast();
   const [generatingReport, setGeneratingReport] = useState<string | null>(null);
+  const [generatedReports, setGeneratedReports] = useState<{
+    [key: string]: {
+      date: string;
+      data: any;
+    }
+  }>({});
   
   useEffect(() => {
     setCases(getAllCases());
@@ -82,17 +96,223 @@ const ReportsPage = () => {
     });
   };
   
+  const generateSummaryReport = () => {
+    const openCases = cases.filter(c => c.status !== "closed").length;
+    const closedCases = cases.filter(c => c.status === "closed").length;
+    const highPriorityCases = cases.filter(c => c.priority === "high").length;
+    
+    return {
+      totalCases: cases.length,
+      openCases,
+      closedCases,
+      closureRate: cases.length > 0 ? (closedCases / cases.length * 100).toFixed(1) : 0,
+      highPriorityCases,
+      caseTypeDistribution: caseTypeData,
+      statusDistribution: statusData,
+      priorityDistribution: priorityData,
+    };
+  };
+  
+  const generateDetailedReport = () => {
+    // Return a more detailed version with full case data
+    return {
+      summary: generateSummaryReport(),
+      caseDetails: cases.map(c => ({
+        id: c.id,
+        title: c.title,
+        type: c.caseType,
+        status: c.status,
+        priority: c.priority,
+        assigned: c.assigned,
+        created: c.createdAt,
+        updated: c.updatedAt,
+      })),
+    };
+  };
+  
+  const generateTrendAnalysis = () => {
+    // Create a trend analysis over time
+    return {
+      monthlyTrends: monthlyData,
+      priorityTrends: priorityData,
+      recommendation: "Case volume has increased by 15% over the last quarter. Consider allocating additional resources to maintain service levels.",
+    };
+  };
+  
+  const generateLocationMap = () => {
+    // Generate location data
+    const locations = [
+      { region: "North", cases: 34 },
+      { region: "South", cases: 28 },
+      { region: "East", cases: 19 },
+      { region: "West", cases: 22 },
+      { region: "Central", cases: 17 },
+    ];
+    
+    return {
+      locationData: locations,
+      hotspots: ["North", "South"],
+      recommendation: "The North and South regions show significantly higher case volumes. Consider investigating regional factors or allocating more resources to these areas."
+    };
+  };
+  
   const handleGenerateReport = (reportType: string) => {
     setGeneratingReport(reportType);
     
-    // Simulate report generation with a delay
+    // Generate the actual report based on type
     setTimeout(() => {
+      let reportData;
+      
+      switch(reportType) {
+        case 'Summary Report':
+          reportData = generateSummaryReport();
+          break;
+        case 'Detailed Report':
+          reportData = generateDetailedReport();
+          break;
+        case 'Trend Analysis':
+          reportData = generateTrendAnalysis();
+          break;
+        case 'Location Heat Map':
+          reportData = generateLocationMap();
+          break;
+        default:
+          reportData = {};
+      }
+      
+      // Save the generated report
+      setGeneratedReports(prev => ({
+        ...prev,
+        [reportType]: {
+          date: new Date().toLocaleString(),
+          data: reportData
+        }
+      }));
+      
       setGeneratingReport(null);
+      
       toast({
         title: `${reportType} generated`,
         description: `Your ${reportType.toLowerCase()} has been generated successfully`,
       });
     }, 1500);
+  };
+  
+  // Helper to render the appropriate report view
+  const renderReportContent = (reportType: string) => {
+    const report = generatedReports[reportType];
+    if (!report) return null;
+    
+    switch(reportType) {
+      case 'Summary Report':
+        return (
+          <div className="mt-4 space-y-4">
+            <h3 className="text-lg font-medium">Summary Report (Generated on {report.date})</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-muted p-4 rounded-lg">
+                <div className="text-2xl font-bold">{report.data.totalCases}</div>
+                <div className="text-sm text-muted-foreground">Total Cases</div>
+              </div>
+              <div className="bg-muted p-4 rounded-lg">
+                <div className="text-2xl font-bold">{report.data.openCases}</div>
+                <div className="text-sm text-muted-foreground">Open Cases</div>
+              </div>
+              <div className="bg-muted p-4 rounded-lg">
+                <div className="text-2xl font-bold">{report.data.closedCases}</div>
+                <div className="text-sm text-muted-foreground">Closed Cases</div>
+              </div>
+              <div className="bg-muted p-4 rounded-lg">
+                <div className="text-2xl font-bold">{report.data.closureRate}%</div>
+                <div className="text-sm text-muted-foreground">Closure Rate</div>
+              </div>
+            </div>
+          </div>
+        );
+        
+      case 'Detailed Report':
+        return (
+          <div className="mt-4 space-y-4">
+            <h3 className="text-lg font-medium">Detailed Report (Generated on {report.date})</h3>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Priority</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {report.data.caseDetails.slice(0, 5).map((caseItem: any) => (
+                    <TableRow key={caseItem.id}>
+                      <TableCell>{caseItem.id.substring(0, 8)}...</TableCell>
+                      <TableCell>{caseItem.title}</TableCell>
+                      <TableCell>{caseItem.type}</TableCell>
+                      <TableCell>{caseItem.status}</TableCell>
+                      <TableCell>{caseItem.priority}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {report.data.caseDetails.length > 5 && (
+                <div className="p-2 text-center text-sm text-muted-foreground">
+                  Showing 5 of {report.data.caseDetails.length} cases
+                </div>
+              )}
+            </div>
+          </div>
+        );
+        
+      case 'Trend Analysis':
+        return (
+          <div className="mt-4 space-y-4">
+            <h3 className="text-lg font-medium">Trend Analysis (Generated on {report.date})</h3>
+            <div className="border rounded-md p-4">
+              <h4 className="font-medium mb-2">Key Findings</h4>
+              <p>{report.data.recommendation}</p>
+            </div>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={report.data.monthlyTrends}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#8884d8" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        );
+        
+      case 'Location Heat Map':
+        return (
+          <div className="mt-4 space-y-4">
+            <h3 className="text-lg font-medium">Location Analysis (Generated on {report.date})</h3>
+            <div className="border rounded-md p-4">
+              <h4 className="font-medium mb-2">Regional Hotspots</h4>
+              <p>Primary hotspot regions: {report.data.hotspots.join(", ")}</p>
+              <p className="mt-2">{report.data.recommendation}</p>
+            </div>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={report.data.locationData} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis dataKey="region" type="category" />
+                  <Tooltip />
+                  <Bar dataKey="cases" fill="#82ca9d" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        );
+        
+      default:
+        return null;
+    }
   };
   
   return (
@@ -128,6 +348,7 @@ const ReportsPage = () => {
             </TabsTrigger>
           </TabsList>
           
+          {/* Overview Tab Content */}
           <TabsContent value="overview" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card>
@@ -234,6 +455,7 @@ const ReportsPage = () => {
             </div>
           </TabsContent>
           
+          {/* Case Reports Tab Content */}
           <TabsContent value="cases" className="space-y-4">
             <Card>
               <CardHeader>
@@ -251,6 +473,9 @@ const ReportsPage = () => {
                     >
                       {generatingReport === 'Summary Report' ? 'Generating...' : 'Generate'}
                     </Button>
+                    
+                    {/* Render the summary report content if it exists */}
+                    {generatedReports['Summary Report'] && renderReportContent('Summary Report')}
                   </div>
                   <div className="border rounded-md p-4">
                     <h3 className="font-medium mb-2">Detailed Report</h3>
@@ -261,6 +486,9 @@ const ReportsPage = () => {
                     >
                       {generatingReport === 'Detailed Report' ? 'Generating...' : 'Generate'}
                     </Button>
+                    
+                    {/* Render the detailed report content if it exists */}
+                    {generatedReports['Detailed Report'] && renderReportContent('Detailed Report')}
                   </div>
                 </div>
               </CardContent>
@@ -273,6 +501,7 @@ const ReportsPage = () => {
             </Card>
           </TabsContent>
           
+          {/* Analytics Tab Content */}
           <TabsContent value="analytics" className="space-y-4">
             <Card>
               <CardHeader>
@@ -290,6 +519,9 @@ const ReportsPage = () => {
                     >
                       {generatingReport === 'Trend Analysis' ? 'Generating...' : 'Generate'}
                     </Button>
+                    
+                    {/* Render the trend analysis content if it exists */}
+                    {generatedReports['Trend Analysis'] && renderReportContent('Trend Analysis')}
                   </div>
                   <div className="border rounded-md p-4">
                     <h3 className="font-medium mb-2">Location Heat Map</h3>
@@ -300,6 +532,9 @@ const ReportsPage = () => {
                     >
                       {generatingReport === 'Location Heat Map' ? 'Generating...' : 'Generate'}
                     </Button>
+                    
+                    {/* Render the location heat map content if it exists */}
+                    {generatedReports['Location Heat Map'] && renderReportContent('Location Heat Map')}
                   </div>
                 </div>
               </CardContent>
