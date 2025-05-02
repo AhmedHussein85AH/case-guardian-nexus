@@ -97,15 +97,15 @@ const ReportsPage = () => {
   };
   
   const generateSummaryReport = () => {
-    const openCases = cases.filter(c => c.status !== "closed").length;
-    const closedCases = cases.filter(c => c.status === "closed").length;
+    const openCases = cases.filter(c => c.status !== "resolved").length;
+    const resolvedCases = cases.filter(c => c.status === "resolved").length;
     const highPriorityCases = cases.filter(c => c.priority === "high").length;
     
     return {
       totalCases: cases.length,
       openCases,
-      closedCases,
-      closureRate: cases.length > 0 ? (closedCases / cases.length * 100).toFixed(1) : 0,
+      closedCases: resolvedCases,
+      closureRate: cases.length > 0 ? (resolvedCases / cases.length * 100).toFixed(1) : 0,
       highPriorityCases,
       caseTypeDistribution: caseTypeData,
       statusDistribution: statusData,
@@ -119,11 +119,11 @@ const ReportsPage = () => {
       summary: generateSummaryReport(),
       caseDetails: cases.map(c => ({
         id: c.id,
-        title: c.title,
+        caseId: c.caseId,
         type: c.caseType,
         status: c.status,
         priority: c.priority,
-        assigned: c.assigned,
+        operator: c.operatorName, // Using operatorName instead of assigned which doesn't exist
         created: c.createdAt,
         updated: c.updatedAt,
       })),
@@ -238,7 +238,7 @@ const ReportsPage = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>ID</TableHead>
-                    <TableHead>Title</TableHead>
+                    <TableHead>Case ID</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Priority</TableHead>
@@ -248,7 +248,7 @@ const ReportsPage = () => {
                   {report.data.caseDetails.slice(0, 5).map((caseItem: any) => (
                     <TableRow key={caseItem.id}>
                       <TableCell>{caseItem.id.substring(0, 8)}...</TableCell>
-                      <TableCell>{caseItem.title}</TableCell>
+                      <TableCell>{caseItem.caseId.substring(0, 8)}...</TableCell>
                       <TableCell>{caseItem.type}</TableCell>
                       <TableCell>{caseItem.status}</TableCell>
                       <TableCell>{caseItem.priority}</TableCell>
