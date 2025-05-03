@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -38,6 +39,25 @@ const formSchema = z.object({
   role: z.string().min(1, { message: "Please select a role." }),
   department: z.string().min(1, { message: "Please select a department." }),
   status: z.string().min(1, { message: "Please select a status." }),
+  permissions: z.object({
+    viewCases: z.boolean().default(false),
+    manageCases: z.boolean().default(false),
+    viewReports: z.boolean().default(false),
+    generateReports: z.boolean().default(false),
+    viewUsers: z.boolean().default(false),
+    manageUsers: z.boolean().default(false),
+    viewMessages: z.boolean().default(false),
+    manageSettings: z.boolean().default(false),
+  }).default({
+    viewCases: false,
+    manageCases: false,
+    viewReports: false,
+    generateReports: false,
+    viewUsers: false,
+    manageUsers: false,
+    viewMessages: false,
+    manageSettings: false,
+  }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -50,6 +70,16 @@ type User = {
   department: string;
   status: string;
   initials: string;
+  permissions?: {
+    viewCases: boolean;
+    manageCases: boolean;
+    viewReports: boolean;
+    generateReports: boolean;
+    viewUsers: boolean;
+    manageUsers: boolean;
+    viewMessages: boolean;
+    manageSettings: boolean;
+  };
 };
 
 interface EditUserDialogProps {
@@ -71,6 +101,16 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
       role: user.role,
       department: user.department,
       status: user.status,
+      permissions: user.permissions || {
+        viewCases: false,
+        manageCases: false,
+        viewReports: false,
+        generateReports: false,
+        viewUsers: false,
+        manageUsers: false,
+        viewMessages: false,
+        manageSettings: false,
+      },
     },
   });
 
@@ -83,8 +123,73 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
       role: user.role,
       department: user.department,
       status: user.status,
+      permissions: user.permissions || {
+        viewCases: false,
+        manageCases: false,
+        viewReports: false,
+        generateReports: false,
+        viewUsers: false,
+        manageUsers: false,
+        viewMessages: false,
+        manageSettings: false,
+      },
     });
   }, [user, form]);
+
+  const handleRoleChange = (role: string) => {
+    // Only update permissions if they haven't been customized yet
+    if (!user.permissions) {
+      let permissions = {
+        viewCases: false,
+        manageCases: false,
+        viewReports: false,
+        generateReports: false,
+        viewUsers: false,
+        manageUsers: false,
+        viewMessages: false,
+        manageSettings: false,
+      };
+  
+      if (role === "Admin") {
+        permissions = {
+          viewCases: true,
+          manageCases: true,
+          viewReports: true,
+          generateReports: true,
+          viewUsers: true,
+          manageUsers: true,
+          viewMessages: true,
+          manageSettings: true,
+        };
+      } else if (role === "Manager") {
+        permissions = {
+          viewCases: true,
+          manageCases: true,
+          viewReports: true,
+          generateReports: true,
+          viewUsers: true,
+          manageUsers: false,
+          viewMessages: true,
+          manageSettings: false,
+        };
+      } else if (role === "CCTV Operator") {
+        permissions = {
+          viewCases: true,
+          manageCases: false,
+          viewReports: false,
+          generateReports: false,
+          viewUsers: false,
+          manageUsers: false,
+          viewMessages: true,
+          manageSettings: false,
+        };
+      }
+  
+      Object.keys(permissions).forEach(key => {
+        form.setValue(`permissions.${key}` as any, permissions[key as keyof typeof permissions]);
+      });
+    }
+  };
 
   const onSubmit = (values: FormValues) => {
     // Get existing users from localStorage
@@ -110,6 +215,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
         department: values.department,
         status: values.status,
         initials: initials,
+        permissions: values.permissions,
       };
       
       // Save back to localStorage
@@ -129,17 +235,15 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
   };
 
   const roleOptions = [
-    { value: "Administrator", label: "Administrator" },
-    { value: "Case Manager", label: "Case Manager" },
-    { value: "Investigator", label: "Investigator" },
-    { value: "Supervisor", label: "Supervisor" },
+    { value: "Admin", label: "Admin" },
+    { value: "Manager", label: "Manager" },
+    { value: "CCTV Operator", label: "CCTV Operator" },
   ];
 
   const departmentOptions = [
-    { value: "Legal", label: "Legal" },
-    { value: "Operations", label: "Operations" },
-    { value: "Field Work", label: "Field Work" },
-    { value: "Management", label: "Management" },
+    { value: "Admins", label: "Admins" },
+    { value: "Managers", label: "Managers" },
+    { value: "Operators", label: "Operators" },
   ];
 
   const statusOptions = [
@@ -148,9 +252,20 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
     { value: "Inactive", label: "Inactive" },
   ];
 
+  const permissionItems = [
+    { id: "viewCases", label: "View Cases" },
+    { id: "manageCases", label: "Manage Cases" },
+    { id: "viewReports", label: "View Reports" },
+    { id: "generateReports", label: "Generate Reports" },
+    { id: "viewUsers", label: "View Users" },
+    { id: "manageUsers", label: "Manage Users" },
+    { id: "viewMessages", label: "View Messages" },
+    { id: "manageSettings", label: "Manage Settings" },
+  ];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <DialogHeader>
@@ -160,32 +275,34 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="John Doe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input placeholder="john.doe@example.com" type="email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="John Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="john.doe@example.com" type="email" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               <FormField
                 control={form.control}
                 name="password"
@@ -221,90 +338,121 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="role"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Role</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a role" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {roleOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="department"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Department</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a department" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {departmentOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {statusOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Role</FormLabel>
+                      <Select 
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          handleRoleChange(value);
+                        }}
+                        defaultValue={field.value}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {roleOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="department"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Department</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a department" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {departmentOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {statusOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="border p-4 rounded-md">
+                <h3 className="font-medium mb-3">User Permissions</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {permissionItems.map((item) => (
+                    <FormField
+                      key={item.id}
+                      control={form.control}
+                      name={`permissions.${item.id}` as any}
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            {item.label}
+                          </FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

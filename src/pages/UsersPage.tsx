@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Filter, Search, MoreHorizontal, Trash } from "lucide-react";
+import { Filter, Search, MoreHorizontal, Trash, Shield, CheckCircle, XCircle } from "lucide-react";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -29,6 +29,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+
+type UserPermissions = {
+  viewCases: boolean;
+  manageCases: boolean;
+  viewReports: boolean;
+  generateReports: boolean;
+  viewUsers: boolean;
+  manageUsers: boolean;
+  viewMessages: boolean;
+  manageSettings: boolean;
+};
 
 type User = {
   id: number;
@@ -38,6 +54,7 @@ type User = {
   department: string;
   status: string;
   initials: string;
+  permissions?: UserPermissions;
 };
 
 const UsersPage = () => {
@@ -48,6 +65,7 @@ const UsersPage = () => {
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [displayUsers, setDisplayUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [expandedUsers, setExpandedUsers] = useState<{ [key: number]: boolean }>({});
   const { toast } = useToast();
 
   // Initial mock user data
@@ -56,46 +74,96 @@ const UsersPage = () => {
       id: 1,
       name: "Jane Smith",
       email: "jane.smith@example.com",
-      role: "Administrator",
-      department: "Legal",
+      role: "Admin",
+      department: "Admins",
       status: "Active",
-      initials: "JS"
+      initials: "JS",
+      permissions: {
+        viewCases: true,
+        manageCases: true,
+        viewReports: true,
+        generateReports: true,
+        viewUsers: true,
+        manageUsers: true,
+        viewMessages: true,
+        manageSettings: true,
+      }
     },
     {
       id: 2,
       name: "Robert Johnson",
       email: "robert.johnson@example.com",
-      role: "Case Manager",
-      department: "Operations",
+      role: "Manager",
+      department: "Managers",
       status: "Active",
-      initials: "RJ"
+      initials: "RJ",
+      permissions: {
+        viewCases: true,
+        manageCases: true,
+        viewReports: true,
+        generateReports: true,
+        viewUsers: true,
+        manageUsers: false,
+        viewMessages: true,
+        manageSettings: false,
+      }
     },
     {
       id: 3,
       name: "Sarah Williams",
       email: "sarah.williams@example.com",
-      role: "Investigator",
-      department: "Field Work",
+      role: "CCTV Operator",
+      department: "Operators",
       status: "Away",
-      initials: "SW"
+      initials: "SW",
+      permissions: {
+        viewCases: true,
+        manageCases: false,
+        viewReports: false,
+        generateReports: false,
+        viewUsers: false,
+        manageUsers: false,
+        viewMessages: true,
+        manageSettings: false,
+      }
     },
     {
       id: 4,
       name: "Michael Davis",
       email: "michael.davis@example.com",
-      role: "Supervisor",
-      department: "Management",
+      role: "Manager",
+      department: "Managers",
       status: "Active",
-      initials: "MD"
+      initials: "MD",
+      permissions: {
+        viewCases: true,
+        manageCases: true,
+        viewReports: true,
+        generateReports: false,
+        viewUsers: false,
+        manageUsers: false,
+        viewMessages: true,
+        manageSettings: false,
+      }
     },
     {
       id: 5,
       name: "Lisa Brown",
       email: "lisa.brown@example.com",
-      role: "Case Manager",
-      department: "Operations",
+      role: "CCTV Operator",
+      department: "Operators",
       status: "Inactive",
-      initials: "LB"
+      initials: "LB",
+      permissions: {
+        viewCases: true,
+        manageCases: false,
+        viewReports: false,
+        generateReports: false,
+        viewUsers: false,
+        manageUsers: false,
+        viewMessages: true,
+        manageSettings: false,
+      }
     },
   ];
 
@@ -172,6 +240,13 @@ const UsersPage = () => {
     setUserToDelete(null);
   };
 
+  const toggleUserExpansion = (userId: number) => {
+    setExpandedUsers(prev => ({
+      ...prev,
+      [userId]: !prev[userId]
+    }));
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "Active":
@@ -183,6 +258,27 @@ const UsersPage = () => {
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
+  };
+
+  const getRoleBadge = (role: string) => {
+    switch (role) {
+      case "Admin":
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Admin</Badge>;
+      case "Manager":
+        return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">Manager</Badge>;
+      case "CCTV Operator":
+        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">CCTV Operator</Badge>;
+      default:
+        return <Badge variant="outline">{role}</Badge>;
+    }
+  };
+
+  const getPermissionIcon = (hasPermission: boolean) => {
+    return hasPermission ? (
+      <CheckCircle className="h-4 w-4 text-green-500" />
+    ) : (
+      <XCircle className="h-4 w-4 text-red-500" />
+    );
   };
 
   return (
@@ -231,56 +327,115 @@ const UsersPage = () => {
                     <TableHead>Role</TableHead>
                     <TableHead>Department</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Permissions</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {displayUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback>{user.initials}</AvatarFallback>
-                          </Avatar>
-                          <span className="font-medium">{user.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.role}</TableCell>
-                      <TableCell>{user.department}</TableCell>
-                      <TableCell>{getStatusBadge(user.status)}</TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Actions</span>
+                    <React.Fragment key={user.id}>
+                      <TableRow>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback>{user.initials}</AvatarFallback>
+                            </Avatar>
+                            <span className="font-medium">{user.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>{getRoleBadge(user.role)}</TableCell>
+                        <TableCell>{user.department}</TableCell>
+                        <TableCell>{getStatusBadge(user.status)}</TableCell>
+                        <TableCell>
+                          <CollapsibleTrigger
+                            asChild
+                            onClick={() => toggleUserExpansion(user.id)}
+                          >
+                            <Button variant="outline" size="sm" className="flex items-center gap-1">
+                              <Shield className="h-4 w-4" />
+                              View
                             </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => toast({ title: "Profile view", description: "Viewing " + user.name + "'s profile" })}>
-                              View profile
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleEditUser(user)}>
-                              Edit user
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => toast({ title: "Password reset", description: "Password reset email sent to " + user.email })}>
-                              Reset password
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              className="text-destructive"
-                              onClick={() => handleDeleteUser(user)}
-                            >
-                              <Trash className="h-4 w-4 mr-2" />
-                              Delete user
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
+                          </CollapsibleTrigger>
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Actions</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => toast({ title: "Profile view", description: "Viewing " + user.name + "'s profile" })}>
+                                View profile
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleEditUser(user)}>
+                                Edit user
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => toast({ title: "Password reset", description: "Password reset email sent to " + user.email })}>
+                                Reset password
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                className="text-destructive"
+                                onClick={() => handleDeleteUser(user)}
+                              >
+                                <Trash className="h-4 w-4 mr-2" />
+                                Delete user
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                      <Collapsible open={expandedUsers[user.id]}>
+                        <CollapsibleContent>
+                          <TableRow className="bg-muted/50">
+                            <TableCell colSpan={7}>
+                              <div className="py-2 px-4">
+                                <h4 className="font-medium mb-2">User Permissions</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                                  <div className="flex items-center gap-2">
+                                    {getPermissionIcon(user.permissions?.viewCases ?? false)}
+                                    <span>View Cases</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {getPermissionIcon(user.permissions?.manageCases ?? false)}
+                                    <span>Manage Cases</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {getPermissionIcon(user.permissions?.viewReports ?? false)}
+                                    <span>View Reports</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {getPermissionIcon(user.permissions?.generateReports ?? false)}
+                                    <span>Generate Reports</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {getPermissionIcon(user.permissions?.viewUsers ?? false)}
+                                    <span>View Users</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {getPermissionIcon(user.permissions?.manageUsers ?? false)}
+                                    <span>Manage Users</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {getPermissionIcon(user.permissions?.viewMessages ?? false)}
+                                    <span>View Messages</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {getPermissionIcon(user.permissions?.manageSettings ?? false)}
+                                    <span>Manage Settings</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </React.Fragment>
                   ))}
                 </TableBody>
               </Table>

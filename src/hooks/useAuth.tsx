@@ -3,12 +3,24 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 
+type UserPermissions = {
+  viewCases: boolean;
+  manageCases: boolean;
+  viewReports: boolean;
+  generateReports: boolean;
+  viewUsers: boolean;
+  manageUsers: boolean;
+  viewMessages: boolean;
+  manageSettings: boolean;
+};
+
 interface User {
   id: string;
   email: string;
   role: string;
   name: string;
   organization?: string;
+  permissions?: UserPermissions;
 }
 
 interface AuthContextType {
@@ -17,6 +29,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  hasPermission: (permission: keyof UserPermissions) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -50,8 +63,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const user = {
           id: "1",
           email,
-          role: "admin",
-          name: "Admin User"
+          role: "Admin",
+          name: "Admin User",
+          permissions: {
+            viewCases: true,
+            manageCases: true,
+            viewReports: true,
+            generateReports: true,
+            viewUsers: true,
+            manageUsers: true,
+            viewMessages: true,
+            manageSettings: true,
+          }
         };
         
         localStorage.setItem("caseGuardianUser", JSON.stringify(user));
@@ -68,8 +91,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const user = {
           id: Math.random().toString(36).substring(2, 9),
           email,
-          role: "user",
-          name: email.split('@')[0]
+          role: "CCTV Operator",
+          name: email.split('@')[0],
+          permissions: {
+            viewCases: true,
+            manageCases: false,
+            viewReports: false,
+            generateReports: false,
+            viewUsers: false,
+            manageUsers: false,
+            viewMessages: true,
+            manageSettings: false,
+          }
         };
         
         localStorage.setItem("caseGuardianUser", JSON.stringify(user));
@@ -104,6 +137,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const hasPermission = (permission: keyof UserPermissions): boolean => {
+    if (!user || !user.permissions) return false;
+    return user.permissions[permission] === true;
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -111,6 +149,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isLoading,
       login,
       logout,
+      hasPermission,
     }}>
       {children}
     </AuthContext.Provider>
