@@ -1,18 +1,7 @@
-
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
-
-type UserPermissions = {
-  viewCases: boolean;
-  manageCases: boolean;
-  viewReports: boolean;
-  generateReports: boolean;
-  viewUsers: boolean;
-  manageUsers: boolean;
-  viewMessages: boolean;
-  manageSettings: boolean;
-};
+import { UserPermissions } from '@/components/users/UserTypes';
 
 interface User {
   id: string;
