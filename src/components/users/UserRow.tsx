@@ -21,7 +21,7 @@ interface UserRowProps {
 
 export function UserRow({ user, isExpanded, onToggleExpand, onEdit, onDelete, onToast }: UserRowProps) {
   return (
-    <>
+    <Collapsible open={isExpanded}>
       <TableRow>
         <TableCell>
           <div className="flex items-center gap-3">
@@ -55,15 +55,13 @@ export function UserRow({ user, isExpanded, onToggleExpand, onEdit, onDelete, on
           />
         </TableCell>
       </TableRow>
-      <Collapsible open={isExpanded}>
-        <CollapsibleContent>
-          <TableRow className="bg-muted/50">
-            <TableCell colSpan={7}>
-              <UserPermissionsView permissions={user.permissions} />
-            </TableCell>
-          </TableRow>
-        </CollapsibleContent>
-      </Collapsible>
-    </>
+      <CollapsibleContent>
+        <TableRow className="bg-muted/50">
+          <TableCell colSpan={7}>
+            <UserPermissionsView permissions={user.permissions} />
+          </TableCell>
+        </TableRow>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
