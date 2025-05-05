@@ -25,17 +25,17 @@ export function UsersTable({
 }: UsersTableProps) {
   if (isLoading) {
     return (
-      <div className="rounded-md border">
-        <Table>
+      <div className="rounded-md border overflow-hidden">
+        <Table className="table-fixed">
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Department</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Permissions</TableHead>
-              <TableHead></TableHead>
+              <TableHead className="w-[25%]">Name</TableHead>
+              <TableHead className="w-[25%]">Email</TableHead>
+              <TableHead className="w-[12%]">Role</TableHead>
+              <TableHead className="w-[12%]">Department</TableHead>
+              <TableHead className="w-[10%]">Status</TableHead>
+              <TableHead className="w-[10%]">Permissions</TableHead>
+              <TableHead className="w-[6%]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -57,17 +57,17 @@ export function UsersTable({
   }
 
   return (
-    <div className="rounded-md border">
-      <Table>
+    <div className="rounded-md border overflow-hidden">
+      <Table className="table-fixed">
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Department</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Permissions</TableHead>
-            <TableHead></TableHead>
+            <TableHead className="w-[25%]">Name</TableHead>
+            <TableHead className="w-[25%]">Email</TableHead>
+            <TableHead className="w-[12%]">Role</TableHead>
+            <TableHead className="w-[12%]">Department</TableHead>
+            <TableHead className="w-[10%]">Status</TableHead>
+            <TableHead className="w-[10%]">Permissions</TableHead>
+            <TableHead className="w-[6%]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

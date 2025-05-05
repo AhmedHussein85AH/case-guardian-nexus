@@ -61,7 +61,8 @@ export const getAllCases = async (): Promise<Case[]> => {
   }
   
   // Convert Supabase format to our app's Case format
-  const cases = (data as unknown as SupabaseCase[] || []).map(mapSupabaseCaseToAppCase);
+  // Use a type assertion to explicitly cast the data to SupabaseCase[]
+  const cases = ((data || []) as unknown as SupabaseCase[]).map(mapSupabaseCaseToAppCase);
   return cases;
 };
 
@@ -80,7 +81,7 @@ export const getCaseById = async (id: string): Promise<Case | null> => {
     throw error;
   }
   
-  // Convert Supabase format to our app's Case format
+  // Convert Supabase format to our app's Case format using an explicit cast
   return data ? mapSupabaseCaseToAppCase(data as unknown as SupabaseCase) : null;
 };
 
@@ -99,7 +100,7 @@ export const saveCase = async (caseData: Case): Promise<Case> => {
     throw error;
   }
   
-  // Convert back to app format
+  // Convert back to app format with explicit casting
   return mapSupabaseCaseToAppCase(data as unknown as SupabaseCase);
 };
 
@@ -244,4 +245,3 @@ export const getCurrentSession = async () => {
   
   return data.session;
 };
-

@@ -30,15 +30,19 @@ export const useUsers = () => {
         }
 
         if (data) {
-          const formattedUsers: User[] = data.map(user => ({
-            id: parseInt(user.id.slice(0, 8), 16), // Convert UUID to numeric ID for compatibility
-            name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email,
-            email: user.email,
-            role: user.role || 'User',
-            department: user.department || 'General',
-            status: user.status || 'Active',
-            initials: getInitials(`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email),
-            permissions: user.permissions as UserPermissions || {
+          const formattedUsers: User[] = data.map(user => {
+            // Generate a numeric ID from the UUID for compatibility
+            const numericId = parseInt(user.id.replace(/-/g, '').substring(0, 8), 16);
+            
+            const firstName = user.first_name || '';
+            const lastName = user.last_name || '';
+            const fullName = `${firstName} ${lastName}`.trim() || user.email;
+            
+            // Get initials from name
+            const initials = getInitials(fullName);
+            
+            // Default permissions if none exist
+            const defaultPermissions: UserPermissions = {
               viewCases: true,
               manageCases: false,
               viewReports: false,
@@ -47,8 +51,32 @@ export const useUsers = () => {
               manageUsers: false,
               viewMessages: true,
               manageSettings: false,
-            },
-          }));
+            };
+            
+            // Ensure permissions is properly typed
+            let userPermissions: UserPermissions;
+            
+            if (user.permissions && typeof user.permissions === 'object') {
+              userPermissions = {
+                ...defaultPermissions,
+                ...user.permissions as UserPermissions
+              };
+            } else {
+              userPermissions = defaultPermissions;
+            }
+            
+            return {
+              id: numericId,
+              name: fullName,
+              email: user.email,
+              role: user.role || 'User',
+              department: user.department || 'General',
+              status: user.status || 'Active',
+              initials: initials,
+              permissions: userPermissions,
+              originalId: user.id, // Keep the original UUID for API operations
+            };
+          });
 
           setAllUsers(formattedUsers);
           setDisplayUsers(formattedUsers);
@@ -116,19 +144,57 @@ export const useUsers = () => {
     if (!userToDelete) return;
     
     try {
-      // We delete the auth user, which will cascade to the profile due to our foreign key constraint
-      const { error } = await supabase.auth.admin.deleteUser(userToDelete.id.toString());
+      // Use the original UUID to delete the user
+      const originalId = userToDelete.originalId || userToDelete.id.toString();
       
-      if (error) {
-        throw error;
+      // First, check if we're dealing with an admin user using the original UUID
+      const { data: adminResult, error: adminError } = await supabase.rpc('is_admin_by_id', {
+        user_id: originalId
+      });
+      
+      // If it's an admin user and there's an error with the RPC call, fall back to direct deletion
+      if (adminError) {
+        console.log("Admin check failed, proceeding with direct deletion:", adminError);
+      } else if (adminResult === true) {
+        // This is an admin user, we might want to prevent deletion or show a special warning
+        toast({
+          title: "Cannot delete admin user",
+          description: "Admin users cannot be deleted through the interface for security reasons.",
+          variant: "destructive",
+        });
+        setIsDeleteDialogOpen(false);
+        setUserToDelete(null);
+        return;
       }
+      
+      // Delete the user profile first
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .delete()
+        .eq('id', originalId);
+      
+      if (profileError) {
+        throw profileError;
+      }
+      
+      // Optionally try to delete the auth user if you have admin rights
+      // Note: This might not work without proper Supabase functions set up
+      /* 
+      const { error: authError } = await supabase.rpc('delete_user', {
+        user_id: originalId
+      });
+      
+      if (authError) {
+        console.warn("Could not delete auth user:", authError);
+      }
+      */
       
       toast({
         title: "User deleted",
         description: `${userToDelete.name} has been removed from the system.`,
       });
       
-      // Update local state - this should be handled by the subscription, but just in case
+      // Update local state
       setAllUsers(users => users.filter(user => user.id !== userToDelete.id));
       setDisplayUsers(users => users.filter(user => user.id !== userToDelete.id));
     } catch (error: any) {

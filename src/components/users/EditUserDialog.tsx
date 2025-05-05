@@ -9,6 +9,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { EditUserForm, User } from "./EditUserForm";
 import { EditUserFormValues } from "./editUserSchema";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EditUserDialogProps {
   user: User;
@@ -19,46 +20,46 @@ interface EditUserDialogProps {
 export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps) {
   const { toast } = useToast();
   
-  const onSubmit = (values: EditUserFormValues) => {
-    // Get existing users from localStorage
-    const existingUsers = JSON.parse(localStorage.getItem('case-guardian-users') || '[]');
-    
-    // Find the user to update
-    const userIndex = existingUsers.findIndex((u: User) => u.id === user.id);
-    
-    if (userIndex !== -1) {
-      // Generate initials from updated name
-      const initials = values.name
-        .split(' ')
-        .map(part => part[0])
-        .join('')
-        .toUpperCase();
-        
-      // Update the user
-      existingUsers[userIndex] = {
-        ...existingUsers[userIndex],
-        name: values.name,
-        email: values.email,
-        role: values.role,
-        department: values.department,
-        status: values.status,
-        initials: initials,
-        permissions: values.permissions,
-      };
+  const onSubmit = async (values: EditUserFormValues) => {
+    try {
+      // Get the original UUID
+      const originalId = user.originalId || user.id.toString();
       
-      // Save back to localStorage
-      localStorage.setItem('case-guardian-users', JSON.stringify(existingUsers));
+      // Split name into first and last name
+      const nameParts = values.name.split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
+      // Update the user profile in Supabase
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({
+          first_name: firstName,
+          last_name: lastName,
+          email: values.email,
+          role: values.role,
+          department: values.department,
+          status: values.status,
+          permissions: values.permissions
+        })
+        .eq('id', originalId);
+      
+      if (error) throw error;
       
       toast({
         title: "User updated successfully",
         description: `${values.name}'s information has been updated`,
       });
       
-      // Trigger storage event to update UI
-      window.dispatchEvent(new Event('storage'));
+      onOpenChange(false);
+    } catch (error: any) {
+      toast({
+        title: "Error updating user",
+        description: error.message || "Failed to update user information",
+        variant: "destructive",
+      });
+      console.error("Error updating user:", error);
     }
-    
-    onOpenChange(false);
   };
 
   return (

@@ -10,6 +10,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { User } from "./UserTypes";
+import { useState } from "react";
 
 interface DeleteUserDialogProps {
   user: User | null;
@@ -19,6 +20,17 @@ interface DeleteUserDialogProps {
 }
 
 export function DeleteUserDialog({ user, isOpen, onOpenChange, onConfirm }: DeleteUserDialogProps) {
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  const handleConfirm = async () => {
+    setIsDeleting(true);
+    try {
+      await onConfirm();
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+  
   return (
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
       <AlertDialogContent>
@@ -30,12 +42,13 @@ export function DeleteUserDialog({ user, isOpen, onOpenChange, onConfirm }: Dele
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
           <AlertDialogAction 
-            onClick={onConfirm}
+            onClick={handleConfirm}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            disabled={isDeleting}
           >
-            Delete
+            {isDeleting ? "Deleting..." : "Delete"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

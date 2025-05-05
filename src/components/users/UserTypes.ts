@@ -19,4 +19,5 @@ export type User = {
   status: string;
   initials: string;
   permissions?: UserPermissions;
+  originalId?: string; // Original UUID from Supabase
 };
