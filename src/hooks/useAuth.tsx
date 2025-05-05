@@ -90,21 +90,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (data) {
+        // Create default permissions in case they're not set
+        const defaultPermissions: UserPermissions = {
+          viewCases: true,
+          manageCases: false,
+          viewReports: false,
+          generateReports: false,
+          viewUsers: false,
+          manageUsers: false,
+          viewMessages: true,
+          manageSettings: false,
+        };
+
+        // Handle permissions - make sure we have a proper UserPermissions object
+        let userPermissions: UserPermissions;
+        
+        if (data.permissions && typeof data.permissions === 'object') {
+          // Merge default with stored permissions to ensure all fields exist
+          userPermissions = {
+            ...defaultPermissions,
+            ...data.permissions as UserPermissions
+          };
+        } else {
+          // Use defaults if permissions are missing or invalid
+          userPermissions = defaultPermissions;
+        }
+
+        // Create the auth user object with properly typed permissions
         const authUser: AuthUser = {
           id: userId,
           email: data.email,
           name: `${data.first_name || ''} ${data.last_name || ''}`.trim() || data.email,
           role: data.role || 'user',
-          permissions: data.permissions || {
-            viewCases: true,
-            manageCases: false,
-            viewReports: false,
-            generateReports: false,
-            viewUsers: false,
-            manageUsers: false,
-            viewMessages: true,
-            manageSettings: false,
-          }
+          permissions: userPermissions
         };
 
         setUser(authUser);
