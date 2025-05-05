@@ -8,8 +8,15 @@ import { AddUserDialog } from "@/components/users/AddUserDialog";
 import { EditUserDialog } from "@/components/users/EditUserDialog";
 import { DeleteUserDialog } from "@/components/users/DeleteUserDialog";
 import { useUsers } from "@/hooks/useUsers";
+import { useAuth } from "@/hooks/useAuth";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangleIcon } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const UsersPage = () => {
+  const navigate = useNavigate();
+  const { user, isAuthenticated, hasPermission } = useAuth();
+  
   const {
     displayUsers,
     searchQuery,
@@ -25,8 +32,37 @@ const UsersPage = () => {
     handleEditUser,
     handleDeleteUser,
     confirmDeleteUser,
-    showToast
+    showToast,
+    isLoading
   } = useUsers();
+
+  // Check permissions
+  if (!isAuthenticated) {
+    // Redirect to login if not authenticated
+    React.useEffect(() => {
+      navigate('/login');
+    }, [navigate]);
+    return null;
+  }
+
+  const canViewUsers = hasPermission('viewUsers');
+  const canManageUsers = hasPermission('manageUsers');
+
+  if (!canViewUsers) {
+    return (
+      <AppShell>
+        <div className="space-y-6">
+          <Alert variant="destructive">
+            <AlertTriangleIcon className="h-4 w-4" />
+            <AlertTitle>Access Denied</AlertTitle>
+            <AlertDescription>
+              You don't have permission to access the Users Management page.
+            </AlertDescription>
+          </Alert>
+        </div>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell>
@@ -39,7 +75,7 @@ const UsersPage = () => {
             </p>
           </div>
           
-          <AddUserDialog />
+          {canManageUsers && <AddUserDialog />}
         </div>
         
         <Card>
@@ -57,6 +93,7 @@ const UsersPage = () => {
               onEditUser={handleEditUser}
               onDeleteUser={handleDeleteUser}
               onToast={showToast}
+              isLoading={isLoading}
             />
           </CardContent>
         </Card>

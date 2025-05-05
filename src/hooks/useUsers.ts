@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { User } from '@/components/users/UserTypes';
+import { User, UserPermissions } from '@/components/users/UserTypes';
+import { supabase } from "@/integrations/supabase/client";
 
 export const useUsers = () => {
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -12,132 +13,79 @@ export const useUsers = () => {
   const [displayUsers, setDisplayUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedUsers, setExpandedUsers] = useState<{ [key: number]: boolean }>({});
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Initial mock user data
-  const mockUsers = [
-    {
-      id: 1,
-      name: "Jane Smith",
-      email: "jane.smith@example.com",
-      role: "Admin",
-      department: "Admins",
-      status: "Active",
-      initials: "JS",
-      permissions: {
-        viewCases: true,
-        manageCases: true,
-        viewReports: true,
-        generateReports: true,
-        viewUsers: true,
-        manageUsers: true,
-        viewMessages: true,
-        manageSettings: true,
-      }
-    },
-    {
-      id: 2,
-      name: "Robert Johnson",
-      email: "robert.johnson@example.com",
-      role: "Manager",
-      department: "Managers",
-      status: "Active",
-      initials: "RJ",
-      permissions: {
-        viewCases: true,
-        manageCases: true,
-        viewReports: true,
-        generateReports: true,
-        viewUsers: true,
-        manageUsers: false,
-        viewMessages: true,
-        manageSettings: false,
-      }
-    },
-    {
-      id: 3,
-      name: "Sarah Williams",
-      email: "sarah.williams@example.com",
-      role: "CCTV Operator",
-      department: "Operators",
-      status: "Away",
-      initials: "SW",
-      permissions: {
-        viewCases: true,
-        manageCases: false,
-        viewReports: false,
-        generateReports: false,
-        viewUsers: false,
-        manageUsers: false,
-        viewMessages: true,
-        manageSettings: false,
-      }
-    },
-    {
-      id: 4,
-      name: "Michael Davis",
-      email: "michael.davis@example.com",
-      role: "Manager",
-      department: "Managers",
-      status: "Active",
-      initials: "MD",
-      permissions: {
-        viewCases: true,
-        manageCases: true,
-        viewReports: true,
-        generateReports: false,
-        viewUsers: false,
-        manageUsers: false,
-        viewMessages: true,
-        manageSettings: false,
-      }
-    },
-    {
-      id: 5,
-      name: "Lisa Brown",
-      email: "lisa.brown@example.com",
-      role: "CCTV Operator",
-      department: "Operators",
-      status: "Inactive",
-      initials: "LB",
-      permissions: {
-        viewCases: true,
-        manageCases: false,
-        viewReports: false,
-        generateReports: false,
-        viewUsers: false,
-        manageUsers: false,
-        viewMessages: true,
-        manageSettings: false,
-      }
-    },
-  ];
-
-  // Load users from localStorage or use mock data
+  // Load users from Supabase
   useEffect(() => {
-    const loadUsers = () => {
-      let storedUsers = localStorage.getItem('case-guardian-users');
-      if (!storedUsers) {
-        // Initialize with mock data if no data exists
-        localStorage.setItem('case-guardian-users', JSON.stringify(mockUsers));
-        setAllUsers(mockUsers);
-        setDisplayUsers(mockUsers);
-      } else {
-        const parsedUsers = JSON.parse(storedUsers);
-        setAllUsers(parsedUsers);
-        setDisplayUsers(parsedUsers);
+    const loadUsers = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select('*');
+
+        if (error) {
+          throw error;
+        }
+
+        if (data) {
+          const formattedUsers: User[] = data.map(user => ({
+            id: parseInt(user.id.slice(0, 8), 16), // Convert UUID to numeric ID for compatibility
+            name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email,
+            email: user.email,
+            role: user.role || 'User',
+            department: user.department || 'General',
+            status: user.status || 'Active',
+            initials: getInitials(`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email),
+            permissions: user.permissions as UserPermissions || {
+              viewCases: true,
+              manageCases: false,
+              viewReports: false,
+              generateReports: false,
+              viewUsers: false,
+              manageUsers: false,
+              viewMessages: true,
+              manageSettings: false,
+            },
+          }));
+
+          setAllUsers(formattedUsers);
+          setDisplayUsers(formattedUsers);
+        }
+      } catch (error: any) {
+        toast({
+          title: "Failed to load users",
+          description: error.message || "An error occurred while loading users",
+          variant: "destructive",
+        });
+        console.error("Error loading users:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     loadUsers();
 
-    const handleStorageChange = () => {
-      loadUsers();
-    };
+    // Subscribe to changes in the user_profiles table
+    const usersSubscription = supabase
+      .channel('public:user_profiles')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_profiles' }, loadUsers)
+      .subscribe();
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+    return () => {
+      supabase.removeChannel(usersSubscription);
+    };
+  }, [toast]);
+
+  // Get initials from a name
+  const getInitials = (name: string): string => {
+    return name
+      .split(' ')
+      .map(part => part.charAt(0).toUpperCase())
+      .slice(0, 2)
+      .join('');
+  };
 
   // Handle search
   useEffect(() => {
@@ -164,26 +112,36 @@ export const useUsers = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  const confirmDeleteUser = () => {
+  const confirmDeleteUser = async () => {
     if (!userToDelete) return;
     
-    const updatedUsers = allUsers.filter(user => user.id !== userToDelete.id);
-    localStorage.setItem('case-guardian-users', JSON.stringify(updatedUsers));
-    setAllUsers(updatedUsers);
-    setDisplayUsers(updatedUsers.filter(user =>
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.department.toLowerCase().includes(searchQuery.toLowerCase())
-    ));
-    
-    toast({
-      title: "User deleted",
-      description: `${userToDelete.name} has been removed from the system.`,
-    });
-    
-    setIsDeleteDialogOpen(false);
-    setUserToDelete(null);
+    try {
+      // We delete the auth user, which will cascade to the profile due to our foreign key constraint
+      const { error } = await supabase.auth.admin.deleteUser(userToDelete.id.toString());
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "User deleted",
+        description: `${userToDelete.name} has been removed from the system.`,
+      });
+      
+      // Update local state - this should be handled by the subscription, but just in case
+      setAllUsers(users => users.filter(user => user.id !== userToDelete.id));
+      setDisplayUsers(users => users.filter(user => user.id !== userToDelete.id));
+    } catch (error: any) {
+      toast({
+        title: "Failed to delete user",
+        description: error.message || "An error occurred while deleting the user",
+        variant: "destructive",
+      });
+      console.error("Error deleting user:", error);
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setUserToDelete(null);
+    }
   };
 
   const toggleUserExpansion = (userId: number) => {
@@ -212,6 +170,7 @@ export const useUsers = () => {
     handleEditUser,
     handleDeleteUser,
     confirmDeleteUser,
-    showToast
+    showToast,
+    isLoading
   };
 };
