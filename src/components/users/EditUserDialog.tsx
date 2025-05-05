@@ -7,7 +7,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { EditUserForm, User } from "./EditUserForm";
+import { EditUserForm } from "./EditUserForm";
+import { User } from "./UserTypes";
 import { EditUserFormValues } from "./editUserSchema";
 import { supabase } from "@/integrations/supabase/client";
 

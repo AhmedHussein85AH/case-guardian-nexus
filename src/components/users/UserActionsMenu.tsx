@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Trash, User, Lock } from "lucide-react";
 import { User as UserType } from "./UserTypes";
-import { supabase } from "@/integrations/supabase/client";
+import { resetPassword } from "@/services/auth/authService";
 import { useState } from "react";
 
 interface UserActionsMenuProps {
@@ -38,11 +38,7 @@ export function UserActionsMenu({ user, onEdit, onDelete, onToast }: UserActions
       setIsResetting(true);
       
       // Send password recovery email via Supabase
-      const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
-        redirectTo: window.location.origin + '/reset-password',
-      });
-      
-      if (error) throw error;
+      await resetPassword(user.email);
       
       onToast(
         "Password reset email sent", 

@@ -59,7 +59,7 @@ export const useUsers = () => {
             if (user.permissions && typeof user.permissions === 'object') {
               userPermissions = {
                 ...defaultPermissions,
-                ...user.permissions as UserPermissions
+                ...(user.permissions as unknown as UserPermissions)
               };
             } else {
               userPermissions = defaultPermissions;
