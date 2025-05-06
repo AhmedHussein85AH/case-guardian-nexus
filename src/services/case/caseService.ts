@@ -60,7 +60,7 @@ export const getAllCases = async (): Promise<Case[]> => {
     throw error;
   }
   
-  // Convert Supabase format to our app's Case format with explicit casting
+  // Convert Supabase format to our app's Case format with proper type casting
   const cases = (data || []) as unknown as SupabaseCase[];
   return cases.map(mapSupabaseCaseToAppCase);
 };

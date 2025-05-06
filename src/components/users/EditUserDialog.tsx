@@ -11,6 +11,7 @@ import { EditUserForm } from "./EditUserForm";
 import { User } from "./UserTypes";
 import { EditUserFormValues } from "./editUserSchema";
 import { supabase } from "@/integrations/supabase/client";
+import { updateUserProfile } from "@/services/user/userService";
 
 interface EditUserDialogProps {
   user: User;
@@ -31,21 +32,16 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
       
-      // Update the user profile in Supabase
-      const { error } = await supabase
-        .from('user_profiles')
-        .update({
-          first_name: firstName,
-          last_name: lastName,
-          email: values.email,
-          role: values.role,
-          department: values.department,
-          status: values.status,
-          permissions: values.permissions
-        })
-        .eq('id', originalId);
-      
-      if (error) throw error;
+      // Update the user profile using the service function
+      await updateUserProfile(originalId, {
+        first_name: firstName,
+        last_name: lastName,
+        email: values.email,
+        role: values.role,
+        department: values.department,
+        status: values.status,
+        permissions: values.permissions
+      });
       
       toast({
         title: "User updated successfully",

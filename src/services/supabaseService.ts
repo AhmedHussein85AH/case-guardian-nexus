@@ -10,7 +10,6 @@ import {
   deleteCase,
   mapSupabaseCaseToAppCase,
   mapAppCaseToSupabaseCase,
-  SupabaseCase
 } from './case/caseService';
 
 import {
@@ -33,6 +32,9 @@ import {
   isAdmin
 } from './auth/authService';
 
+// Re-export the type with 'export type' syntax
+import type { SupabaseCase } from './case/caseService';
+
 export {
   // Case services
   getAllCases,
@@ -42,7 +44,6 @@ export {
   deleteCase,
   mapSupabaseCaseToAppCase,
   mapAppCaseToSupabaseCase,
-  SupabaseCase,
   
   // User services
   getAllUserProfiles,
@@ -62,3 +63,6 @@ export {
   resetPassword,
   isAdmin
 };
+
+// Export the type with proper syntax for isolatedModules
+export type { SupabaseCase };

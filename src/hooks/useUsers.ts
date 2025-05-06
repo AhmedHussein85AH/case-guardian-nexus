@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { User, UserPermissions } from '@/components/users/UserTypes';
 import { supabase } from "@/integrations/supabase/client";
+import { getInitials } from '@/services/user/userService';
 
 export const useUsers = () => {
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -176,18 +176,6 @@ export const useUsers = () => {
       if (profileError) {
         throw profileError;
       }
-      
-      // Optionally try to delete the auth user if you have admin rights
-      // Note: This might not work without proper Supabase functions set up
-      /* 
-      const { error: authError } = await supabase.rpc('delete_user', {
-        user_id: originalId
-      });
-      
-      if (authError) {
-        console.warn("Could not delete auth user:", authError);
-      }
-      */
       
       toast({
         title: "User deleted",
