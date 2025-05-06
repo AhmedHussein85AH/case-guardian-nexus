@@ -8,7 +8,7 @@ import { AddUserDialog } from "@/components/users/AddUserDialog";
 import { EditUserDialog } from "@/components/users/EditUserDialog";
 import { DeleteUserDialog } from "@/components/users/DeleteUserDialog";
 import { useUsers } from "@/hooks/users"; // Updated import path
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangleIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";

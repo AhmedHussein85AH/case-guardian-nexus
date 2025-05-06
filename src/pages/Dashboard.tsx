@@ -1,7 +1,7 @@
 
 import DashboardOverview from "@/components/dashboard/DashboardOverview";
 import AppShell from "@/components/layouts/AppShell";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth";
 
 const Dashboard = () => {
   const { user } = useAuth();

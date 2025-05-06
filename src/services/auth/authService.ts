@@ -50,7 +50,7 @@ export const signOut = async () => {
 };
 
 export const resetPassword = async (email: string) => {
-  // Fix TypeScript error by ensuring correct options type
+  // Fix TypeScript error by providing the correct type for options
   const options = {
     redirectTo: `${window.location.origin}/reset-password`,
   };

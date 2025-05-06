@@ -1,7 +1,7 @@
 
 import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth";
 import AppSidebar from "@/components/navigation/AppSidebar";
 import AppHeader from "@/components/navigation/AppHeader";
 import { SidebarProvider } from "@/components/ui/sidebar";

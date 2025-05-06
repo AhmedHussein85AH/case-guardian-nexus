@@ -10,7 +10,7 @@ import {
   SidebarGroup,
   SidebarFooter
 } from "@/components/ui/sidebar";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth";
 import { 
   BarChart3, 
   FileText, 
