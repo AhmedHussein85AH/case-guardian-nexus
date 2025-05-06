@@ -52,10 +52,9 @@ export const signOut = async () => {
 export const resetPassword = async (email: string) => {
   const redirectTo = `${window.location.origin}/reset-password`;
   
-  // According to Supabase JS v2 API, resetPasswordForEmail takes the email as first param
-  // and an options object as the second param
+  // According to Supabase JS v2 API documentation, we need to pass the correct options object
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: redirectTo
+    redirectTo
   });
   
   if (error) {
