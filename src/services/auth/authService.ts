@@ -54,7 +54,7 @@ export const resetPassword = async (email: string) => {
   
   // Fix the options type error by using the correct format for the resetPasswordForEmail call
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: redirectTo
+    redirectTo
   });
   
   if (error) {
