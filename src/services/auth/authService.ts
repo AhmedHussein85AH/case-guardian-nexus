@@ -53,7 +53,7 @@ export const resetPassword = async (email: string) => {
   // For the latest version of Supabase, we need to correctly structure the options
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${window.location.origin}/reset-password`,
-  });
+  } as any); // Using type assertion to resolve the type issue
   
   if (error) {
     console.error("Error resetting password:", error);
