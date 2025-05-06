@@ -43,48 +43,6 @@ export const useAuthMethods = ({ user, setIsLoading }: UseAuthMethodsProps) => {
     }
   };
 
-  const signup = async (email: string, password: string, name: string, role: string = 'user') => {
-    setIsLoading(true);
-    try {
-      // Split name into first and last name
-      const nameParts = name.split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
-
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            first_name: firstName,
-            last_name: lastName,
-            role: role
-          }
-        }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Signup successful",
-        description: "Please check your email for a confirmation link",
-      });
-      
-      // For development purposes, we can just login immediately
-      // In production, users would need to confirm their email
-      await login(email, password);
-    } catch (error: any) {
-      toast({
-        title: "Signup error",
-        description: error.message || "Failed to sign up. Please try again.",
-        variant: "destructive",
-      });
-      console.error("Signup error:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const logout = async () => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -111,7 +69,6 @@ export const useAuthMethods = ({ user, setIsLoading }: UseAuthMethodsProps) => {
 
   return {
     login,
-    signup,
     logout,
     hasPermission
   };

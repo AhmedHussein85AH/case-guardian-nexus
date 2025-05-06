@@ -15,7 +15,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const { 
     login, 
-    signup, 
     logout, 
     hasPermission 
   } = useAuthMethods({ 
@@ -29,7 +28,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isAuthenticated: !!user, 
       isLoading,
       login,
-      signup,
       logout,
       hasPermission,
     }}>
