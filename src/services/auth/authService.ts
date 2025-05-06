@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { AuthResetPasswordForEmailParams } from "@supabase/supabase-js";
 
 // Authentication helpers
 export const getCurrentUser = async () => {
@@ -51,12 +50,10 @@ export const signOut = async () => {
 };
 
 export const resetPassword = async (email: string) => {
-  // Using type any as a workaround for the type mismatch issue
-  const resetOptions: any = {
-    redirectTo: `${window.location.origin}/reset-password`,
-  };
-  
-  const { error } = await supabase.auth.resetPasswordForEmail(email, resetOptions);
+  const { error } = await supabase.auth.resetPasswordForEmail(
+    email, 
+    { redirectTo: `${window.location.origin}/reset-password` }
+  );
   
   if (error) {
     console.error("Error resetting password:", error);
