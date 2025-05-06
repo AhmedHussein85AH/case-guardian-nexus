@@ -24,7 +24,8 @@ export const useUserDialogs = () => {
     if (!userToDelete) return;
     
     try {
-      await deleteUserProfile(userToDelete.id);
+      // Convert id to string if it's a number to fix type error
+      await deleteUserProfile(userToDelete.id.toString());
       setIsDeleteDialogOpen(false);
       setUserToDelete(null);
       return true;

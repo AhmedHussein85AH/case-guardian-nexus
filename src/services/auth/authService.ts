@@ -55,7 +55,8 @@ export const resetPassword = async (email: string) => {
     redirectTo: `${window.location.origin}/reset-password`,
   };
   
-  const { error } = await supabase.auth.resetPasswordForEmail(email, options);
+  // Fix TypeScript error by using the correct type for resetPasswordForEmail
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: options.redirectTo });
   
   if (error) {
     console.error("Error resetting password:", error);

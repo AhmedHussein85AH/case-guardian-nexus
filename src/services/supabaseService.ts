@@ -32,7 +32,7 @@ import {
   isAdmin
 } from './auth/authService';
 
-// Re-export the type with 'export type' syntax
+// Re-export the type with the correct 'export type' syntax
 import type { SupabaseCase } from './case/caseService';
 
 export {
@@ -64,5 +64,5 @@ export {
   isAdmin
 };
 
-// Export the type with proper syntax for isolatedModules
+// Properly export types using 'export type' syntax
 export type { SupabaseCase };
