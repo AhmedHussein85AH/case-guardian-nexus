@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 // Authentication helpers
@@ -50,9 +49,7 @@ export const signOut = async () => {
 };
 
 export const resetPassword = async (email: string) => {
-  // According to Supabase documentation, we need to call resetPasswordForEmail with just the email
-  // and no second parameter, or an empty object if we want to use the default behavior
-  const { error } = await supabase.auth.resetPasswordForEmail(email);
+  const { data, error } = await supabase.auth.resetPasswordForEmail(email);
   
   if (error) {
     console.error("Error resetting password:", error);
