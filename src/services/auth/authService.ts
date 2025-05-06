@@ -50,13 +50,13 @@ export const signOut = async () => {
 };
 
 export const resetPassword = async (email: string) => {
-  // Fix TypeScript error by providing the correct type for options
-  const options = {
-    redirectTo: `${window.location.origin}/reset-password`,
-  };
+  // Fix the TypeScript error by correctly typing the options object
+  const redirectTo = `${window.location.origin}/reset-password`;
   
-  // Fix TypeScript error by using the correct type for resetPasswordForEmail
-  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: options.redirectTo });
+  // Pass the redirectTo as part of the options object
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: redirectTo
+  });
   
   if (error) {
     console.error("Error resetting password:", error);
