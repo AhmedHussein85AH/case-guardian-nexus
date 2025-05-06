@@ -50,12 +50,11 @@ export const signOut = async () => {
 };
 
 export const resetPassword = async (email: string) => {
-  const redirectTo = `${window.location.origin}/reset-password`;
-  
-  // Fix the options type error by using the correct format for the resetPasswordForEmail call
+  // In the latest version of Supabase, the options object needs to be properly structured
+  // Let's fix the type error by using the correct format for the resetPasswordForEmail call
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo
-  });
+    redirectTo: `${window.location.origin}/reset-password`
+  } as { redirectTo: string }); // Add type assertion to ensure compatibility
   
   if (error) {
     console.error("Error resetting password:", error);
