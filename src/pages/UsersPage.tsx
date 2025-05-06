@@ -7,7 +7,7 @@ import { UsersTable } from "@/components/users/UsersTable";
 import { AddUserDialog } from "@/components/users/AddUserDialog";
 import { EditUserDialog } from "@/components/users/EditUserDialog";
 import { DeleteUserDialog } from "@/components/users/DeleteUserDialog";
-import { useUsers } from "@/hooks/useUsers";
+import { useUsers } from "@/hooks/users"; // Updated import path
 import { useAuth } from "@/hooks/useAuth";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangleIcon } from "lucide-react";
